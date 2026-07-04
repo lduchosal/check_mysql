@@ -91,10 +91,10 @@ def _account_checks(
     """
     Evaluate every audit criterion for one mysql.user row.
 
-    Returns one (category, triggered, description) triple per criterion, so callers can log
-    negative results too. The monitoring account (the user the plugin authenticates as) is
-    exempted from the wildcard-host criterion only — it must be remotely reachable to do its
-    job — and stays subject to every other check.
+    Returns one (category, triggered, description) triple per criterion, so callers can log negative
+    results too. The monitoring account (the user the plugin authenticates as) is exempted from the
+    wildcard-host criterion only — it must be remotely reachable to do its job — and stays subject
+    to every other check.
     """
     user = _text(row, "User")
     wildcard_exempt = bool(monitoring_user) and user == monitoring_user
@@ -146,9 +146,9 @@ class SecurityService:
         """
         Evaluate one account, logging each criterion and its verdict.
 
-        Trace (-vvv) shows every criterion with its result; debug (-vv) shows the exemptions
-        applied and the per-account verdict. Returns the triggered (category, description)
-        findings — empty for exempt or clean accounts.
+        Trace (-vvv) shows every criterion with its result; debug (-vv) shows the exemptions applied
+        and the per-account verdict. Returns the triggered (category, description) findings — empty
+        for exempt or clean accounts.
         """
         account = _account(row)
         if f"{_text(row, 'User')}@{_text(row, 'Host')}" in self.allowlist:
