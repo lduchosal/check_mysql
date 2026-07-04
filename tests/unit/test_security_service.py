@@ -151,6 +151,129 @@ class TestPrivilegeFindings:
         assert _result(rows)["value"] == 0
 
 
+class TestExtendedPrivilegeFindings:
+    """Execute and administrative privileges reachable remotely."""
+
+    def test_create_user_is_flagged(self):
+        """CREATE USER on a remote host is a privilege-escalation vector."""
+        result = _result([_row("app", "10.0.0.5", Create_user_priv="Y")])
+        assert result["value"] == 1
+        assert "remote privileges (CREATE USER)" in result["details"][1]
+
+    def test_routine_and_event_privileges_are_flagged(self):
+        """Code-execution privileges (routines, events) are reported."""
+        rows = [_row("app", "10.0.0.5", Create_routine_priv="Y", Event_priv="Y")]
+        result = _result(rows)
+        assert "CREATE ROUTINE" in result["details"][1]
+        assert "EVENT" in result["details"][1]
+
+    def test_local_execute_privileges_are_not_flagged(self):
+        """The same privileges bound to localhost are expected."""
+        rows = [_row("app", "localhost", Create_user_priv="Y", Reload_priv="Y")]
+        assert _result(rows)["value"] == 0
+
+
+class TestWeakPasswordFindings:
+    """Offline weak-password detection on mysql_native_password accounts."""
+
+    # mysql_native_password hash of the literal password "password".
+    _WEAK_HASH = "*2470C0C06DEE42FD1618BB99005ADCA2EC9D1E19"
+
+    def test_weak_native_password_is_flagged(self):
+        """A native account whose hash matches a common password is flagged."""
+        rows = [
+            _row(
+                "app",
+                "localhost",
+                plugin="mysql_native_password",
+                authentication_string=self._WEAK_HASH,
+            )
+        ]
+        result = _result(rows)
+        assert result["value"] == 1
+        assert "weak password" in result["details"][1]
+
+    def test_weak_password_in_legacy_column_is_flagged(self):
+        """MariaDB keeps the native hash in the Password column."""
+        rows = [_row("app", "localhost", plugin="mysql_native_password")]
+        rows[0]["authentication_string"] = ""
+        rows[0]["Password"] = self._WEAK_HASH
+        assert _result(rows)["value"] == 1
+
+    def test_strong_native_password_is_clean(self):
+        """An unknown hash is not flagged as weak."""
+        rows = [
+            _row(
+                "app",
+                "localhost",
+                plugin="mysql_native_password",
+                authentication_string="*0123456789ABCDEF0123456789ABCDEF01234567",
+            )
+        ]
+        assert _result(rows)["value"] == 0
+
+    def test_weak_hash_on_salted_plugin_is_not_tested(self):
+        """caching_sha2_password is salted: the offline test is skipped."""
+        rows = [_row("app", "localhost", authentication_string=self._WEAK_HASH)]
+        assert _result(rows)["value"] == 0
+
+    def test_native_account_without_hash_is_not_weak(self):
+        """An empty native credential is a missing password, not a weak one."""
+        rows = [
+            _row(
+                "app",
+                "localhost",
+                plugin="mysql_native_password",
+                authentication_string="",
+                Password="",
+            )
+        ]
+        result = _result(rows)
+        assert "weak password" not in result["details"][1]
+        assert "no password" in result["details"][1]
+
+
+class TestPasswordExpiredFindings:
+    """Accounts with an expired password left in place."""
+
+    def test_expired_password_is_flagged(self):
+        """password_expired = Y is a stale, unusable credential."""
+        result = _result([_row("app", "localhost", password_expired="Y")])
+        assert result["value"] == 1
+        assert "password expired" in result["details"][1]
+
+    def test_active_password_is_clean(self):
+        """The default N is not flagged."""
+        assert _result([_row("app", "localhost")])["value"] == 0
+
+
+class TestExpectedAdmins:
+    """The [security] admins list exempts the remote-privileges finding only."""
+
+    def _audited(self, rows, admins):
+        """Run the service with the given expected-admin accounts."""
+        client = MockMySQLClient(user_accounts=rows)
+        return SecurityService(client, admins=admins).get_result()
+
+    def test_listed_admin_is_exempt_from_privileges(self):
+        """A remote DBA declared as admin is not flagged for its privileges."""
+        rows = [_row("dba", "10.0.0.5", Super_priv="Y", Grant_priv="Y")]
+        assert self._audited(rows, frozenset({"dba@10.0.0.5"}))["value"] == 0
+
+    def test_unlisted_admin_is_still_flagged(self):
+        """An over-privileged remote account outside the list is flagged."""
+        rows = [_row("dba", "10.0.0.5", Super_priv="Y")]
+        assert self._audited(rows, frozenset({"dba@10.0.0.6"}))["value"] == 1
+
+    def test_admin_stays_subject_to_other_checks(self):
+        """The privilege exemption does not cover a wildcard host."""
+        rows = [_row("dba", "%", Super_priv="Y")]
+        result = self._audited(rows, frozenset({"dba@%"}))
+        assert result["value"] == 1
+        assert "wildcard host" in result["details"][1]
+        assert "remote privileges" not in result["details"][1]
+
+
 class TestExemptions:
     """Locked accounts, no-login plugins and the allowlist."""
 

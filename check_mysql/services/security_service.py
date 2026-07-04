@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections import Counter
 from typing import Any
 
@@ -31,13 +32,51 @@ _EXTERNAL_AUTH_PLUGINS = frozenset(
     }
 )
 
-# Global privileges dangerous enough to flag on remotely reachable accounts.
+# Global privileges dangerous enough to flag on remotely reachable accounts:
+# administrative control (SUPER, SHUTDOWN, RELOAD, CREATE USER), privilege
+# escalation (GRANT OPTION, FILE, PROCESS) and code execution (routines,
+# events, triggers).
 _DANGEROUS_PRIV_COLUMNS = (
     ("Super_priv", "SUPER"),
     ("Grant_priv", "GRANT OPTION"),
     ("File_priv", "FILE"),
     ("Process_priv", "PROCESS"),
     ("Shutdown_priv", "SHUTDOWN"),
+    ("Create_user_priv", "CREATE USER"),
+    ("Reload_priv", "RELOAD"),
+    ("Create_routine_priv", "CREATE ROUTINE"),
+    ("Alter_routine_priv", "ALTER ROUTINE"),
+    ("Event_priv", "EVENT"),
+    ("Trigger_priv", "TRIGGER"),
+)
+
+# Common passwords tested offline against mysql_native_password hashes only
+# (the salted caching_sha2_password hashes cannot be tested without a login).
+_WEAK_PASSWORDS = frozenset(
+    {
+        "123456",
+        "12345678",
+        "123456789",
+        "password",
+        "password1",
+        "root",
+        "toor",
+        "admin",
+        "mysql",
+        "changeme",
+        "change-me",
+        "secret",
+        "letmein",
+        "welcome",
+        "qwerty",
+        "abc123",
+        "test",
+        "guest",
+        "oracle",
+        "master",
+        "monitor",
+        "nagios",
+    }
 )
 
 
@@ -49,6 +88,11 @@ def _text(row: dict[str, Any], column: str) -> str:
 def _account(row: dict[str, Any]) -> str:
     """Render the row as the usual ``'user'@'host'`` account literal."""
     return f"'{_text(row, 'User')}'@'{_text(row, 'Host')}'"
+
+
+def _entry(row: dict[str, Any]) -> str:
+    """Render the row as the ``user@host`` key used by the allow/admins lists."""
+    return f"{_text(row, 'User')}@{_text(row, 'Host')}"
 
 
 def _is_granted(row: dict[str, Any], column: str) -> bool:
@@ -75,6 +119,30 @@ def _lacks_password(row: dict[str, Any]) -> bool:
     return not (_text(row, "Password") or _text(row, "authentication_string"))
 
 
+def _native_password_hash(password: str) -> str:
+    """Return the mysql_native_password hash: ``*`` + UPPER(SHA1(SHA1(password)))."""
+    first = hashlib.sha1(password.encode(), usedforsecurity=False).digest()
+    second = hashlib.sha1(first, usedforsecurity=False).hexdigest().upper()
+    return "*" + second
+
+
+def _weak_password(row: dict[str, Any]) -> bool:
+    """
+    Tell whether a native-auth account uses a well-known weak password.
+
+    Only ``mysql_native_password`` stores an unsalted, offline-comparable hash;
+    every other plugin (salted or external) is skipped, never a false positive.
+    """
+    if _text(row, "plugin").lower() != "mysql_native_password":
+        return False
+    stored = (_text(row, "authentication_string") or _text(row, "Password")).upper()
+    if not stored:
+        return False
+    return any(
+        _native_password_hash(password) == stored for password in _WEAK_PASSWORDS
+    )
+
+
 def _dangerous_privileges(row: dict[str, Any]) -> list[str]:
     """Names of the dangerous global privileges held by the account."""
     priv_columns = [column for column in row if column.endswith("_priv")]
@@ -86,22 +154,27 @@ def _dangerous_privileges(row: dict[str, Any]) -> list[str]:
 
 
 def _account_checks(
-    row: dict[str, Any], monitoring_user: str = ""
+    row: dict[str, Any],
+    monitoring_user: str = "",
+    admins: frozenset[str] = frozenset(),
 ) -> list[tuple[str, bool, str]]:
     """
     Evaluate every audit criterion for one mysql.user row.
 
     Returns one (category, triggered, description) triple per criterion, so callers can log negative
     results too. The monitoring account (the user the plugin authenticates as) is exempted from the
-    wildcard-host criterion only — it must be remotely reachable to do its job — and stays subject
-    to every other check.
+    wildcard-host criterion only; accounts listed as expected admins are exempted from the
+    remote-privileges criterion only. Both stay subject to every other check.
     """
     user = _text(row, "User")
     wildcard_exempt = bool(monitoring_user) and user == monitoring_user
+    admin_exempt = _entry(row) in admins
     privileges = [] if _is_local(row) else _dangerous_privileges(row)
     return [
         ("anonymous", not user, "anonymous account"),
         ("no password", _lacks_password(row), "no password"),
+        ("weak password", _weak_password(row), "weak password"),
+        ("password expired", _is_granted(row, "password_expired"), "password expired"),
         (
             "wildcard host",
             _text(row, "Host") in _WILDCARD_HOSTS and not wildcard_exempt,
@@ -114,7 +187,7 @@ def _account_checks(
         ),
         (
             "remote privileges",
-            bool(privileges),
+            bool(privileges) and not admin_exempt,
             f"remote privileges ({', '.join(privileges)})",
         ),
     ]
@@ -126,7 +199,8 @@ class SecurityService:
 
     Locked accounts and login-refusing plugins are skipped (they carry no attack surface); accounts
     listed in the allowlist (``user@host``, as stored in mysql.user) are exempted from every check;
-    the monitoring user is exempted from the wildcard-host finding only.
+    the monitoring user is exempted from the wildcard-host finding only; accounts listed as expected
+    admins are exempted from the remote-privileges finding only.
     """
 
     def __init__(
@@ -135,12 +209,29 @@ class SecurityService:
         verbose_level: int = 0,
         allowlist: frozenset[str] = frozenset(),
         monitoring_user: str = "",
+        admins: frozenset[str] = frozenset(),
     ) -> None:
         """Initialize with a MySQL client and the exempted accounts."""
         self.client = client
         self.allowlist = allowlist
         self.monitoring_user = monitoring_user
+        self.admins = admins
         self.logger = get_verbose_logger(__name__, verbose_level)
+
+    def _log_exemptions(self, row: dict[str, Any], account: str) -> None:
+        """Trace the wildcard-host and admin exemptions applied to an account."""
+        if (
+            _text(row, "Host") in _WILDCARD_HOSTS
+            and self.monitoring_user
+            and _text(row, "User") == self.monitoring_user
+        ):
+            self.logger.debug(f"{account}: wildcard host exempted (monitoring user)")
+        if (
+            not _is_local(row)
+            and _entry(row) in self.admins
+            and _dangerous_privileges(row)
+        ):
+            self.logger.debug(f"{account}: privileges exempted (expected admin)")
 
     def _audit_row(self, row: dict[str, Any]) -> list[tuple[str, str]]:
         """
@@ -151,16 +242,11 @@ class SecurityService:
         for exempt or clean accounts.
         """
         account = _account(row)
-        if f"{_text(row, 'User')}@{_text(row, 'Host')}" in self.allowlist:
+        if _entry(row) in self.allowlist:
             self.logger.debug(f"{account}: allowlisted, exempt from every check")
             return []
-        if (
-            _text(row, "Host") in _WILDCARD_HOSTS
-            and self.monitoring_user
-            and _text(row, "User") == self.monitoring_user
-        ):
-            self.logger.debug(f"{account}: wildcard host exempted (monitoring user)")
-        checks = _account_checks(row, self.monitoring_user)
+        self._log_exemptions(row, account)
+        checks = _account_checks(row, self.monitoring_user, self.admins)
         for category, triggered, _ in checks:
             verdict = "FLAGGED" if triggered else "ok"
             self.logger.trace(f"{account}: {category}: {verdict}")

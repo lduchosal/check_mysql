@@ -14,11 +14,15 @@ password = secret
 timeout = 10
 
 # --- Account security audit (optional) ---------------------------------------
-# Accounts the `security` command must not flag, as user@host exactly like the
-# User and Host columns of mysql.user (comma separated, % needs no escaping):
+# Tuning for the `security` command. Entries are user@host, exactly like the
+# User and Host columns of mysql.user (comma separated, % needs no escaping).
 #
 #[security]
+# Accounts exempted from EVERY check:
 #allow = backup@10.0.0.5, debian-sys-maint@localhost, app@%
+# Accounts expected to be powerful (exempted from the remote-privileges check
+# only — still checked for passwords, wildcard host, etc.):
+#admins = dba@10.0.0.0/24, ops@%
 
 # --- SSH tunnel (optional) --------------------------------------------------
 # When this section is present, the plugin first opens an SSH tunnel to the

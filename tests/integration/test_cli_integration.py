@@ -518,6 +518,41 @@ class TestSecurityCommand:
         assert result.exit_code == 0
         assert "security=0" in result.output
 
+    def test_admins_from_the_ini_exempt_remote_privileges(self, tmp_path, monkeypatch):
+        """[security] admins silences the privilege finding for a remote DBA."""
+        ini = tmp_path / "check_mysql.ini"
+        ini.write_text(_INI + "\n[security]\nadmins = dba@10.0.0.5\n")
+        rows = [
+            {
+                "User": "dba",
+                "Host": "10.0.0.5",
+                "Super_priv": "Y",
+                "plugin": "caching_sha2_password",
+                "authentication_string": "$A$005$hash",
+                "account_locked": "N",
+            }
+        ]
+        _patch_client(monkeypatch, get_user_accounts=rows)
+        result = CliRunner().invoke(main, ["security", "-c", str(ini)])
+        assert result.exit_code == 0
+        assert "security=0" in result.output
+
+    def test_weak_native_password_is_flagged(self, config_file, monkeypatch):
+        """A mysql_native_password account with a common password is flagged."""
+        rows = [
+            {
+                "User": "app",
+                "Host": "localhost",
+                "plugin": "mysql_native_password",
+                "authentication_string": "*2470C0C06DEE42FD1618BB99005ADCA2EC9D1E19",
+                "account_locked": "N",
+            }
+        ]
+        _patch_client(monkeypatch, get_user_accounts=rows)
+        result = CliRunner().invoke(main, ["security", "-c", config_file])
+        assert result.exit_code == 1
+        assert "weak password" in result.output
+
 
 class TestSqlCommand:
     """End-to-end runs of the sql command."""

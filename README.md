@@ -130,11 +130,13 @@ The `security` command reads `mysql.user` (one `SELECT`, no other table) and fla
 |-------|-----------------------------------|-------------|-----------|
 | Anonymous account | `User` is empty | `anonymous account` | CIS 4.11 |
 | Missing password | `Password` **and** `authentication_string` both empty, on a password-based plugin | `no password` | CIS 4.10 |
+| Weak password | `mysql_native_password` hash matches a common password (offline wordlist, unsalted hashes only) | `weak password` | [MySQLTuner](https://github.com/major/MySQLTuner-perl) |
+| Expired password | `password_expired = Y` (stale credential left in place) | `password expired` | CIS 4.x |
 | Wildcard host | `Host` is `%` or empty (reachable from any address) | `wildcard host` | CIS 4.9 |
 | Remote root | `User` is `root` with a host other than `localhost`/`127.0.0.1`/`::1` | `root reachable remotely` | `mysql_secure_installation` |
-| Remote dangerous privileges | Non-local host holding `SUPER`, `GRANT OPTION`, `FILE`, `PROCESS` or `SHUTDOWN` — or every `*_priv` column, reported as `ALL PRIVILEGES` | `remote privileges (…)` | CIS 5.2–5.8 |
+| Remote dangerous privileges | Non-local host holding `SUPER`, `GRANT OPTION`, `FILE`, `PROCESS`, `SHUTDOWN`, `CREATE USER`, `RELOAD`, `CREATE/ALTER ROUTINE`, `EVENT` or `TRIGGER` — or every `*_priv` column, reported as `ALL PRIVILEGES` | `remote privileges (…)` | CIS 5.2–5.8 |
 
-The value is the number of flagged **accounts** (an account with several findings counts once); the long output lists one `'user'@'host'` line per account and the headline breaks the count down by category. Defaults: WARNING above `0`, CRITICAL above `5`.
+The value is the number of flagged **accounts** (an account with several findings counts once); the long output lists one `'user'@'host'` line per account and the headline breaks the count down by category. Defaults: WARNING above `0`, CRITICAL above `5`. Run with `-vvv` to trace every criterion and its verdict per account (see [Debug Mode](#debug-mode)).
 
 **What is deliberately not flagged:**
 
@@ -142,10 +144,11 @@ The value is the number of flagged **accounts** (an account with several finding
 - **Socket/external authentication** (`unix_socket`, `auth_socket`, PAM, LDAP, GSSAPI, Kerberos, Windows) — an empty credential column is normal there, not a missing password.
 - **Powerful local accounts** — `root@localhost` or `debian-sys-maint@localhost` are expected on every install; privileges are only flagged on remotely reachable accounts.
 - **The monitoring user's `%` host** — the `[mysql]` account must be remotely reachable to do its job; it stays subject to every other check (no password, dangerous privileges).
+- **Expected admins** — accounts listed in `[security] admins` are exempted from the remote-privileges check only (they are meant to be powerful) and stay subject to every other check.
 - **Accounts listed in `[security] allow`** — exempted from every check (see the Configuration section below).
 - **Scoped host patterns** (`10.0.%`, `%.example.com`) — only the pure `%` wildcard is flagged.
 
-**Known limits** (candidates for later versions): weak-but-not-empty passwords (offline wordlist testing à la [MySQLTuner](https://github.com/major/MySQLTuner-perl) only works for unsalted `mysql_native_password` hashes; `caching_sha2_password` is salted by design), legacy authentication plugins (`mysql_native_password`, pre-4.1 hashes — CIS 4.7), absent `validate_password` policy, presence of the `test` database, non-admin grants on the `mysql` schema (CIS 5.1), password expiry, and per-account TLS requirements.
+**Known limits** (candidates for later versions): salted-hash accounts cannot be tested for weak passwords offline (`caching_sha2_password` is salted by design — only `mysql_native_password` is covered); legacy authentication plugins (`mysql_native_password`, pre-4.1 hashes — CIS 4.7), absent `validate_password` policy, presence of the `test` database, non-admin grants on the `mysql` schema (CIS 5.1) and per-account TLS requirements are not yet checked.
 
 ## ⚙️ Configuration
 

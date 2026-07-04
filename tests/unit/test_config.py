@@ -5,6 +5,7 @@ import pytest
 from check_mysql.core.config import (
     _find_config_file,
     get_mysql_config,
+    get_security_admins,
     get_security_allowlist,
     get_ssh_config,
     load_config,
@@ -215,6 +216,28 @@ class TestGetSecurityAllowlist:
         assert get_security_allowlist(config) == frozenset(
             {"backup@10.0.0.5", "dba@localhost"}
         )
+
+
+class TestGetSecurityAdmins:
+    """Tests for get_security_admins."""
+
+    def test_no_section_returns_empty_set(self, tmp_path):
+        """Without a [security] section no admin is declared."""
+        config = load_config(_write_config(tmp_path, _INI))
+        assert not get_security_admins(config)
+
+    def test_missing_admins_option_returns_empty_set(self, tmp_path):
+        """An [security] section with only allow declares no admin."""
+        config = load_config(
+            _write_config(tmp_path, _INI + "\n[security]\nallow = x@y\n")
+        )
+        assert not get_security_admins(config)
+
+    def test_entries_are_split_and_stripped(self, tmp_path):
+        """Admin entries parse like the allowlist, % left unescaped."""
+        content = _INI + "\n[security]\nadmins = dba@10.0.0.5, ops@% ,\n"
+        config = load_config(_write_config(tmp_path, content))
+        assert get_security_admins(config) == frozenset({"dba@10.0.0.5", "ops@%"})
 
 
 class TestGetSSHConfig:

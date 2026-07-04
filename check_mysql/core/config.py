@@ -188,6 +188,21 @@ def get_security_allowlist(config: configparser.ConfigParser) -> frozenset[str]:
     return frozenset(entry for entry in entries if entry)
 
 
+def get_security_admins(config: configparser.ConfigParser) -> frozenset[str]:
+    """
+    Expected-admin accounts (``user@host``) from the optional ``[security]`` section.
+
+    The ``admins`` option lists the accounts that are meant to hold powerful
+    privileges; they are exempted from the remote-privileges finding only, and
+    stay subject to every other check. Same parsing as :func:`get_security_allowlist`.
+    """
+    if not config.has_section("security"):
+        return frozenset()
+    value = config.get("security", "admins", raw=True, fallback="")
+    entries = (entry.strip() for entry in value.replace("\n", ",").split(","))
+    return frozenset(entry for entry in entries if entry)
+
+
 def get_ssh_config(config: configparser.ConfigParser) -> Optional[SSHConfig]:
     """
     Build the SSH tunnel settings from the optional ``[ssh]`` section.

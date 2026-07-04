@@ -8,6 +8,7 @@ from check_mysql.cli.decorators import common_options
 from check_mysql.cli.handlers import run_check
 from check_mysql.core.config import (
     get_mysql_config,
+    get_security_admins,
     get_security_allowlist,
     load_config,
 )
@@ -35,13 +36,14 @@ def register_security_commands(main_group: Any) -> None:
         def factory(
             client: MySQLClientProtocol, verbose_level: int = 0
         ) -> SecurityService:
-            """Build the security service bound to the configured allowlist."""
+            """Build the security service bound to the configured exemptions."""
             cfg = load_config(config)
             return SecurityService(
                 client,
                 verbose_level,
                 allowlist=get_security_allowlist(cfg),
                 monitoring_user=get_mysql_config(cfg).user,
+                admins=get_security_admins(cfg),
             )
 
         run_check(
