@@ -1,0 +1,70 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>#964 — PUBLISH / Quiet toutes les étapes, output complet si erreur — kenboard wiki</title><style>body{margin:0;font-family:system-ui,sans-serif;color:#222;background:#fff}
+.layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+nav.sidebar{background:#f6f8fa;border-right:1px solid #d0d7de;padding:16px;
+  overflow-y:auto;font-size:13px}
+nav.sidebar h1{font-size:14px;text-transform:uppercase;color:#57606a;margin:0 0 12px}
+nav.sidebar ul{list-style:none;padding:0;margin:0}
+nav.sidebar li{margin:2px 0}
+nav.sidebar a{color:#0969da;text-decoration:none}
+nav.sidebar a:hover{text-decoration:underline}
+nav.sidebar a.current{font-weight:600;color:#1a1a1a}
+main{padding:24px 32px;max-width:900px}
+main h1{margin-top:0}
+main code{background:#f6f8fa;padding:1px 4px;border-radius:3px;font-size:90%}
+main pre{background:#f6f8fa;padding:12px;border-radius:6px;overflow-x:auto}
+main pre code{background:transparent;padding:0}
+main a{color:#0969da}
+/* Task detail (#376f — mirrors templates/modals/task_fullscreen.html) */
+.fullscreen-card{background:#fff;border:1px solid #d0d7de;border-radius:10px;
+  padding:32px 36px;max-width:760px}
+.fullscreen-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.fullscreen-id{font-size:12px;color:#57606a;font-weight:600}
+.fullscreen-status{font-size:11px;text-transform:uppercase;letter-spacing:.5px;
+  color:#57606a;background:#f6f8fa;padding:3px 8px;border-radius:10px}
+.fullscreen-status.status-todo{background:#ddf4ff;color:#0969da}
+.fullscreen-status.status-doing{background:#fff8c5;color:#9a6700}
+.fullscreen-status.status-review{background:#dafbe1;color:#1a7f37}
+.fullscreen-status.status-done{background:#eaeef2;color:#57606a}
+.fullscreen-title{font-size:22px;font-weight:700;margin:0 0 16px;line-height:1.3}
+.fullscreen-meta{display:flex;align-items:center;gap:10px;margin-bottom:20px;
+  font-size:13px;color:#57606a}
+.task-avatar{width:28px;height:28px;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px}
+.fs-who{font-weight:600;color:#222}
+.fullscreen-desc{font-size:14px;line-height:1.7;border-top:1px solid #d0d7de;
+  padding-top:16px}
+.fullscreen-desc h1,.fullscreen-desc h2,.fullscreen-desc h3{margin-top:16px;
+  margin-bottom:8px}
+.fullscreen-desc pre{background:#f6f8fa;border-radius:4px;padding:12px;
+  overflow-x:auto;font-size:12px}
+.fullscreen-desc code{background:#f6f8fa;border-radius:3px;padding:1px 4px;font-size:12px}
+.fullscreen-desc pre code{background:transparent;padding:0}
+.fullscreen-desc ul,.fullscreen-desc ol{padding-left:20px}
+.wiki-nav{margin-top:20px;padding-top:12px;border-top:1px solid #d0d7de;
+  font-size:13px;color:#57606a}
+.wiki-nav a{color:#0969da}
+/* Build footer (#743) — version of ``ken`` + generation timestamp. */
+.wiki-footer{margin-top:40px;padding-top:12px;border-top:1px solid #d0d7de;
+  font-size:11px;color:#57606a;text-align:right}
+</style></head><body><div class="layout"><nav class="sidebar"><h1>kenboard wiki</h1><ul><li><a href="../index.html">Home</a></li><li style="padding-left:0px"><a href="../bootstrap/index.html">Bootstrap & Organisation</a></li><li style="padding-left:0px"><a href="../cli/index.html">CLI (commandes Nagios)</a></li><li style="padding-left:0px"><a href="../core/index.html">Core (config, connexion, client, nagios)</a></li><li style="padding-left:0px"><a href="../services/index.html">Services (checks)</a></li><li style="padding-left:0px"><a href="../quality/index.html">Qualité & Gates</a></li><li style="padding-left:0px"><a href="index.html" class="current">CI & Publication</a></li><li style="padding-left:0px"><a href="../doc/index.html">Documentation</a></li><li style="padding-left:0px"><a href="../log/index.html">Journal</a></li><li style="padding-left:12px"><a href="../log/2026-07-04.html">2026-07-04</a></li></ul></nav><main><div class="fullscreen-card"><div class="fullscreen-header"><span class="fullscreen-id">#964</span><span class="fullscreen-status status-done">done</span></div><h2 class="fullscreen-title">PUBLISH / Quiet toutes les étapes, output complet si erreur</h2><div class="fullscreen-meta"><div class="task-avatar" style="background:#0a3069">C</div><span class="fs-who">Claude</span><span>Classified 2026-07-04</span><span>by key:f156efe4-abe2-4a76-affc-d07705fb5c4f</span></div><div class="fullscreen-desc"><p>reduce verbosity of tests and test e2e in publish.sh. Le output pollue gravement le contexte du modèle qui publie. Vérifie toutes les étapes du publish et rend-les quiet, sauf si une erreur survient : alors le output doit être complet pour permettre un debug immédiat.</p>
+<hr />
+<h2>Résolution</h2>
+<h3>Modifications</h3>
+<ul>
+<li>publish.sh : <code>run_command</code> capture stdout+stderr de chaque étape dans un fichier temporaire (<code>mktemp</code>) ; sur succès l'output est jeté, sur échec il est rejoué intégralement (commande + output complet) avant l'abort</li>
+<li>publish.sh : en-têtes d'étape réduits de 5 lignes (cadre <code>═══</code>) à une ligne <code>[N/27] Titre</code></li>
+<li>publish.sh : le gate SonarCloud (<code>scripts/sonar_gate.py</code>, appelé en direct avec son polling visible) passe désormais par <code>run_command</code> — même sémantique quiet/replay</li>
+</ul>
+<h3>Comportements obtenus</h3>
+<ul>
+<li>Publish vert : 2 lignes par étape (en-tête + ✓), plus aucun output de pytest <code>-v</code>, coverage, pdm, git — toutes les étapes couvertes, y compris tests, e2e et SonarCloud</li>
+<li>Étape en échec : la commande exacte puis son stdout+stderr complets sont affichés, puis abort (exit 1) — debug immédiat sans relancer</li>
+<li>Les scripts pdm (<code>test</code>, <code>test-e2e</code> avec <code>-v</code>) sont inchangés : la verbosité reste disponible en usage interactif et dans le replay d'erreur</li>
+</ul>
+<h3>Garde-fous</h3>
+<ul>
+<li><code>sh -n publish.sh</code> : OK</li>
+<li>Harnais (fonctions extraites, commande bruyante succès/échec) : succès silencieux, échec rejoue stdout+stderr et exit 1 — vérifié</li>
+<li><code>pdm run check</code> : rouge sur <code>format-check</code> uniquement, causé par 3 fichiers SEC en WIP d'une session parallèle (security_service.py, test_config.py, test_security_service.py) — non liés à cette carte ; publish.sh n'est couvert par aucun gate Python. Fichiers de la session parallèle laissés intacts</li>
+<li>Validation réelle du flux complet à la prochaine release (<code>publish.sh</code> s'auto-teste à l'usage)</li>
+</ul></div><div class="wiki-nav"><a href="index.html">← retour à ci</a> · <a href="../log/2026-07-04.html">voir log</a></div></div><footer class="wiki-footer">Généré le 2026-07-04 12:42:13 UTC par kenboard 0.2.3</footer></main></div></body></html>

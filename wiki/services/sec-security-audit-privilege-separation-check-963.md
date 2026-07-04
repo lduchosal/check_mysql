@@ -31,6 +31,16 @@ section_title: "Services (checks)"
 - S'appuyer sur `[security] admins` (carte « all privileges ») pour la notion d'admin attendu
 - Critères heuristiques → sévérité modérée / catégories dédiées pour whitelister finement
 - README § Security Audit Semantics + mapping CIS
+
+---
+
+## Avancement (increment security-audit v2)
+
+**Livré** : GRANT OPTION reste signalé sur les comptes distants hors `[security] admins`
+(fondation « redistribution de privilèges par des non-admins » de la carte).
+
+**Reste** : comptes applicatifs avec DDL global (heuristique), comptes cumulards admin+app,
+cascade WITH GRANT OPTION. Dépend de l'inventaire admin (#962). Carte en todo.
 ---
 
 [← retour à services](index.md) · [voir log](../log/2026-07-04.md)

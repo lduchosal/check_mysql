@@ -30,6 +30,16 @@ section_title: "Services (checks)"
   nouveaux critères dans `_account_checks` (catégorie + description), trace `-vvv` gratuite
 - Chaque nouveau critère documenté dans README § Security Audit Semantics (+ mapping CIS)
 - Attention au bruit : critères info/opt-in si besoin, whitelist `[security] allow` inchangée
+
+---
+
+## Avancement (increment security-audit v2)
+
+**Livré** : critère « password expired » (`password_expired = Y`) dans `_account_checks`,
+tracé `-vvv`, testé, documenté (README table + CIS 4.x).
+
+**Reste** : root non renommé (CIS 4.5, tension avec « install saine = OK »), comptes par
+défaut inutilisés, TLS par compte (`ssl_type`). Carte maintenue en todo.
 ---
 
 [← retour à services](index.md) · [voir log](../log/2026-07-04.md)

@@ -34,6 +34,19 @@ les comptes admin locaux sont silencieux par design. Il manque un inventaire exh
 - Nouvelle option `[security] admins` (défaut : comportement actuel, pas de régression)
 - mysql.global_grants = requête supplémentaire → étendre client + mock + GRANT documenté
 - Sortie : catégorie `unexpected admin` distincte, README à jour
+
+---
+
+## Avancement (increment security-audit v2)
+
+**Livré** : option `[security] admins = user@host, …` (config + parsing raw, testée) qui
+exempte les comptes admin attendus du seul critère « remote privileges ». Combinée au
+critère existant, tout compte distant ALL PRIVILEGES / privilège dangereux hors liste est
+signalé (portion « unexpected admin » distante de la carte).
+
+**Reste** : inventaire exhaustif incluant les comptes locaux (approche CIS non-admin,
+bruyante par défaut → opt-in), privilèges dynamiques MySQL 8 (`mysql.global_grants` :
+SYSTEM_USER, ROLE_ADMIN…) et rôles. Carte en todo.
 ---
 
 [← retour à services](index.md) · [voir log](../log/2026-07-04.md)

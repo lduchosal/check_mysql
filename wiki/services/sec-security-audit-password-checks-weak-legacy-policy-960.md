@@ -32,6 +32,18 @@ section_title: "Services (checks)"
   test purement offline sur les hashes déjà lus — JAMAIS de tentatives de connexion
 - Catégories distinctes dans la sortie (`weak password`, `legacy auth`, `no policy`)
 - README § Security Audit Semantics : retirer ces points des « Known limits »
+
+---
+
+## Avancement (increment security-audit v2)
+
+**Livré** : critère « weak password » — wordlist offline (~22 mots de passe courants)
+comparée au hash `mysql_native_password` (`*` + UPPER(SHA1(SHA1(pw)))), colonnes
+authentication_string ET Password ; plugins salés/externes ignorés (jamais de faux positif).
+Tracé `-vvv`, testé (hash de « password » = *2470C0…), documenté.
+
+**Reste** : plugins legacy (CIS 4.7, bruyant sur MariaDB → opt-in), `validate_password`
+absent, expiration par défaut. Wordlist configurable `[security] wordlist`. Carte en todo.
 ---
 
 [← retour à services](index.md) · [voir log](../log/2026-07-04.md)

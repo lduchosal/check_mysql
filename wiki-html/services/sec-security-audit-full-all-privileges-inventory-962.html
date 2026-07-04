@@ -64,4 +64,13 @@ les comptes admin locaux sont silencieux par design. Il manque un inventaire exh
 <li>Nouvelle option <code>[security] admins</code> (défaut : comportement actuel, pas de régression)</li>
 <li>mysql.global_grants = requête supplémentaire → étendre client + mock + GRANT documenté</li>
 <li>Sortie : catégorie <code>unexpected admin</code> distincte, README à jour</li>
-</ul></div><div class="wiki-nav"><a href="index.html">← retour à services</a> · <a href="../log/2026-07-04.html">voir log</a></div></div><footer class="wiki-footer">Généré le 2026-07-04 10:20:16 UTC par kenboard 0.2.3</footer></main></div></body></html>
+</ul>
+<hr />
+<h2>Avancement (increment security-audit v2)</h2>
+<p><strong>Livré</strong> : option <code>[security] admins = user@host, …</code> (config + parsing raw, testée) qui
+exempte les comptes admin attendus du seul critère « remote privileges ». Combinée au
+critère existant, tout compte distant ALL PRIVILEGES / privilège dangereux hors liste est
+signalé (portion « unexpected admin » distante de la carte).</p>
+<p><strong>Reste</strong> : inventaire exhaustif incluant les comptes locaux (approche CIS non-admin,
+bruyante par défaut → opt-in), privilèges dynamiques MySQL 8 (<code>mysql.global_grants</code> :
+SYSTEM_USER, ROLE_ADMIN…) et rôles. Carte en todo.</p></div><div class="wiki-nav"><a href="index.html">← retour à services</a> · <a href="../log/2026-07-04.html">voir log</a></div></div><footer class="wiki-footer">Généré le 2026-07-04 12:42:13 UTC par kenboard 0.2.3</footer></main></div></body></html>
