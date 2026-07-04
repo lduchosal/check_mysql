@@ -1,0 +1,44 @@
+{
+  "global_status": {
+    "Uptime": "864000",
+    "Threads_connected": "42",
+    "Slow_queries": "12",
+    "Questions": "123456",
+    "Bytes_received": "987654",
+    "Bytes_sent": "456789"
+  },
+  "global_variables": {
+    "max_connections": "151",
+    "version": "8.4.0",
+    "version_comment": "MySQL Community Server"
+  },
+  "replica_status_healthy": {
+    "Replica_IO_Running": "Yes",
+    "Replica_SQL_Running": "Yes",
+    "Seconds_Behind_Source": 3,
+    "Source_Host": "db-primary.example.com",
+    "Last_IO_Error": "",
+    "Last_SQL_Error": ""
+  },
+  "replica_status_legacy": {
+    "Slave_IO_Running": "Yes",
+    "Slave_SQL_Running": "Yes",
+    "Seconds_Behind_Master": 7,
+    "Master_Host": "db-primary.example.com",
+    "Last_IO_Error": "",
+    "Last_SQL_Error": ""
+  },
+  "replica_status_broken": {
+    "Replica_IO_Running": "No",
+    "Replica_SQL_Running": "Yes",
+    "Seconds_Behind_Source": null,
+    "Source_Host": "db-primary.example.com",
+    "Last_IO_Error": "error connecting to source"
+  },
+  "replica_status_null_lag": {
+    "Replica_IO_Running": "Yes",
+    "Replica_SQL_Running": "Yes",
+    "Seconds_Behind_Source": null,
+    "Source_Host": "db-primary.example.com"
+  }
+}

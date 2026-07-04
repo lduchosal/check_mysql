@@ -1,0 +1,2 @@
+date,version,py_files,loc_src,max_file_lines,files_over_500,functions,max_func_lines,funcs_over_50,c901_over_10,ruff_debt,pyright_errors,vulture,refurb,docstring_cov,test_cov,min_file_cov
+2026-07-04,0.1.0,26,1220,107,0,70,39,0,0,0,0,0,0,100.0,99.81,98.18

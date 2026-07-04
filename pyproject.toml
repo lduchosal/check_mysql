@@ -1,0 +1,160 @@
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+name = "check-mysql"
+dynamic = ["version"]
+authors = [
+    {name = "ldvchosal", email = "ldvchosal@github.com"},
+]
+description = "A Nagios plugin for monitoring MySQL servers, directly or through an SSH tunnel"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Database",
+    "Topic :: System :: Monitoring",
+    "Topic :: System :: Systems Administration",
+]
+keywords = ["nagios", "monitoring", "mysql", "mariadb", "ssh", "tunnel"]
+dependencies = [
+    "nagiosplugin>=1.4.0",
+    "PyMySQL>=1.1.0",
+    "sshtunnel>=0.4.0",
+    "click>=8.0,<9.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/lduchosal/check_mysql"
+"Bug Reports" = "https://github.com/lduchosal/check_mysql/issues"
+Source = "https://github.com/lduchosal/check_mysql"
+Documentation = "https://github.com/lduchosal/check_mysql/blob/main/README.md"
+
+[project.scripts]
+check_mysql = "check_mysql.cli:main"
+
+[tool.pyright]
+pythonVersion = "3.10"
+typeCheckingMode = "strict"
+reportMissingImports = true
+reportMissingTypeStubs = false
+# Strict typing is enforced on the shipped package only, like the gate
+# (pdm run typecheck); tests stay duck-typed by design.
+exclude = ["tests", "scripts", "build", "dist", ".venv", "**/__pycache__"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v"
+
+[tool.coverage.run]
+# Entry stubs have no testable logic; keeping them out preserves the
+# min_file_cov gate's signal.
+omit = ["check_mysql/__main__.py", "check_mysql/cli/__main__.py"]
+
+[tool.vulture]
+ignore_decorators = ["@click"]
+make_whitelist = true
+min_confidence = 80
+paths = ["check_mysql", "tests"]
+sort_by_size = true
+verbose = false
+
+[tool.interrogate]
+ignore-init-method = true
+ignore-init-module = false
+fail-under = 95
+exclude = ["tests", "docs", "build", "dist"]
+verbose = 1
+quiet = false
+whitelist-regex = []
+color = true
+
+[tool.docformatter]
+recursive = true
+wrap-summaries = 100
+wrap-descriptions = 100
+close-quotes-on-newline = true
+pre-summary-newline = true
+in-place = true
+
+[tool.pdm-bump]
+version-files = [
+    "check_mysql/__init__.py:__version__",
+]
+
+[tool.pdm]
+distribution = true
+version = {source = "file", path = "check_mysql/__init__.py"}
+
+[tool.pdm.scripts]
+format = "ruff format"
+typecheck = "pyright check_mysql/"
+build = "python -m build"
+publish = "python -m twine upload dist/* --verbose"
+install = "pdm install"
+install-dev = "pdm install -G dev"
+smoke = "check_mysql --help"
+
+test = "python -m pytest tests/ -v --cov=check_mysql --cov-report=term-missing --cov-report=xml"
+test-quick = "python -m pytest tests/ --tb=no -q"
+test-ci = "python -m pytest tests/ -v --cov=check_mysql --cov-report=term-missing --cov-report=xml"
+test-unit = "python -m pytest tests/unit/ -v"
+test-integration = "python -m pytest tests/integration/ -v"
+test-cov = "python -m pytest tests/ -v --cov=check_mysql --cov-report=html --cov-report=xml --cov-report=term-missing"
+lint = "ruff check check_mysql/ tests/"
+lint-fix = "ruff check --fix check_mysql/ tests/"
+isort = "ruff check --select I --fix check_mysql/ tests/"
+format-check = "ruff format --check check_mysql/ tests/"
+absolufy = {shell = "find check_mysql -name '*.py' -exec absolufy-imports {} +"}
+flake8 = "flake8 check_mysql/"
+# exceptions.py is excluded: docformatter 1.7.8 collapses the blank line after
+# the module docstring, conflicting with ruff format (wants 2) and flake8 E302.
+# Exclude matches on basename in in-place mode (the full path is ignored there).
+docformatter = {shell = "docformatter check_mysql/ tests/ --exclude exceptions.py || [ $? -eq 3 ]"}
+interrogate = "interrogate -v --omit-covered-files check_mysql/"
+vulture = "vulture check_mysql/ tests/"
+refurb = "refurb check_mysql/ tests/"
+metrics = "python scripts/quality_metrics.py"
+metrics-record = "python scripts/quality_metrics.py --record"
+metrics-gate = "python scripts/quality_metrics.py --gate"
+sonar-gate = "python scripts/sonar_gate.py"
+check = {composite = ["isort", "format-check", "lint", "flake8", "typecheck", "interrogate", "refurb", "vulture", "test", "metrics-gate"]}
+all = {composite = ["install", "format", "build", "test", "smoke"]}
+clean = "rm -rf .coverage htmlcov/ .pytest_cache/ __pycache__/ check_mysql/__pycache__/"
+version-show = "python -c 'import check_mysql; print(check_mysql.__version__)'"
+version-patch = "pdm bump patch"
+version-minor = "pdm bump minor"
+version-major = "pdm bump major"
+
+[dependency-groups]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov>=2.0",
+    "twine>=6.2.0",
+    "pdm>=2.0.0",
+    "ruff>=0.13.0",
+    "pyright>=1.1",
+    "pdm-bump",
+    "vulture>=2.0",
+    "refurb>=2.0",
+    "interrogate>=1.5",
+    "docformatter>=1.7",
+    "absolufy-imports>=0.3.1",
+    "flake8>=7.3",
+    "flake8-docstrings>=1.7.0",
+    "flake8-docstrings-complete>=1.3.0",
+    "certifi",
+]

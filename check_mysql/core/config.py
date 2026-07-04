@@ -1,0 +1,107 @@
+"""Configuration management."""
+
+from __future__ import annotations
+
+import configparser
+from pathlib import Path
+from typing import Optional
+
+from check_mysql.core.exceptions import ConfigurationError
+from check_mysql.core.models import MySQLConfig, SSHConfig
+
+NAGIOS_ETC_DIRS = ("/usr/local/etc/nagios", "/etc/nagios")
+
+
+def load_config(config_path: str = "check_mysql.ini") -> configparser.ConfigParser:
+    """
+    Load configuration from file.
+
+    Raises:
+        FileNotFoundError: If no configuration file can be located.
+    """
+    config = configparser.ConfigParser()
+
+    config_file = _find_config_file(config_path)
+
+    if not config_file or not Path(config_file).exists():
+        raise FileNotFoundError(f"Configuration file not found: {config_path}")
+
+    config.read(config_file)
+    return config
+
+
+def _find_config_file(config_path: str) -> Optional[str]:
+    """Find the configuration file in the current directory or Nagios etc directories."""
+    # If absolute path provided, use it
+    if Path(config_path).is_absolute():
+        return config_path
+
+    # Try current directory
+    current_dir = Path.cwd() / config_path
+    if current_dir.exists():
+        return str(current_dir)
+
+    # Try well-known Nagios configuration directories
+    for base in NAGIOS_ETC_DIRS:
+        candidate = Path(base) / config_path
+        if candidate.exists():
+            return str(candidate)
+
+    # Return original path (will fail later if not found)
+    return config_path
+
+
+def get_mysql_config(
+    config: configparser.ConfigParser,
+    hostname: Optional[str] = None,
+    port: Optional[int] = None,
+) -> MySQLConfig:
+    """Build the MySQL settings from the ``[mysql]`` section, with CLI overrides."""
+    mysql = MySQLConfig()
+    if config.has_section("mysql"):
+        section = config["mysql"]
+        mysql.host = section.get("host", mysql.host)
+        mysql.port = section.getint("port", mysql.port)
+        mysql.user = section.get("user", mysql.user)
+        mysql.password = section.get("password", mysql.password)
+        mysql.database = section.get("database", mysql.database)
+        mysql.timeout = section.getint("timeout", mysql.timeout)
+    if hostname is not None:
+        mysql.host = hostname
+    if port is not None:
+        mysql.port = port
+    return mysql
+
+
+def get_ssh_config(config: configparser.ConfigParser) -> Optional[SSHConfig]:
+    """
+    Build the SSH tunnel settings from the optional ``[ssh]`` section.
+
+    Returns None when the section is absent (direct connection).
+
+    Raises:
+        ConfigurationError: If the section is present but incomplete.
+    """
+    if not config.has_section("ssh"):
+        return None
+
+    section = config["ssh"]
+    host = section.get("host", "")
+    user = section.get("user", "")
+    if not host or not user:
+        raise ConfigurationError("[ssh] section requires both host and user")
+
+    password = section.get("password", None)
+    private_key = section.get("private_key", None)
+    if not password and not private_key:
+        raise ConfigurationError("[ssh] section requires a password or a private_key")
+    if private_key:
+        private_key = str(Path(private_key).expanduser())
+
+    return SSHConfig(
+        host=host,
+        port=section.getint("port", 22),
+        user=user,
+        password=password,
+        private_key=private_key,
+    )

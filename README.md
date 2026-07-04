@@ -1,0 +1,396 @@
+# 🐬 Check MySQL
+
+[![PyPI version](https://img.shields.io/pypi/v/check-mysql.svg)](https://pypi.org/project/check-mysql/)
+[![Python versions](https://img.shields.io/pypi/pyversions/check-mysql.svg)](https://pypi.org/project/check-mysql/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build](https://github.com/lduchosal/check_mysql/actions/workflows/python-package.yml/badge.svg)](https://github.com/lduchosal/check_mysql/actions/workflows/python-package.yml)
+[![Publish](https://github.com/lduchosal/check_mysql/actions/workflows/publish.yml/badge.svg)](https://github.com/lduchosal/check_mysql/actions/workflows/publish.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_check_mysql&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=lduchosal_check_mysql)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_check_mysql&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=lduchosal_check_mysql)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_check_mysql&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=lduchosal_check_mysql)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_check_mysql&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=lduchosal_check_mysql)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_check_mysql&metric=bugs)](https://sonarcloud.io/summary/new_code?id=lduchosal_check_mysql)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_check_mysql&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=lduchosal_check_mysql)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_check_mysql&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=lduchosal_check_mysql)
+[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_check_mysql&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=lduchosal_check_mysql)
+
+A comprehensive **Nagios plugin** for monitoring MySQL and MariaDB servers, either **directly** (PyMySQL) or **through an SSH tunnel** (sshtunnel/paramiko). Built with modern Python practices and designed for enterprise monitoring environments.
+
+## ✨ Features
+
+- 🔌 **Dual Connectivity** - Direct TCP connection or SSH tunnel through a bastion host
+- 🎯 **Multiple Checks** - Uptime, connection usage, replication health, slow queries, query latency
+- 📊 **Nagios Compatible** - Standard exit codes, performance data and range-based thresholds
+- 🏗️ **Clean Architecture** - Modular design with testable components
+- 🔧 **Flexible Configuration** - File-based configuration with CLI overrides (`-H`, `-P`)
+- 📈 **Verbose Logging** - Multi-level debugging support (`-v`, `-vv`, `-vvv`)
+- 🐍 **Modern Python** - Python 3.10+ with strict typing throughout
+
+## 🚀 Quick Start
+
+### Installation
+
+```bash
+# Create virtual environment (recommended)
+python -m venv /usr/local/libexec/nagios/check_mysql
+source /usr/local/libexec/nagios/check_mysql/bin/activate
+
+# Install from PyPI
+pip install check-mysql
+
+# Or install from source
+pip install git+https://github.com/lduchosal/check_mysql.git
+```
+
+### Basic Usage
+
+```bash
+# Check server uptime (alert on recent restart)
+check_mysql uptime
+
+# Check connection usage (percent of max_connections)
+check_mysql connections -W 80 -C 95
+
+# Check replication lag and thread state
+check_mysql replication -W 60 -C 300
+
+# Check the slow queries counter
+check_mysql slowqueries -W 100 -C 1000
+
+# Check SELECT 1 round-trip latency
+check_mysql latency -W 100 -C 500
+
+# Point at another server without editing the config
+check_mysql uptime -H db2.example.com -P 3307
+```
+
+## 📋 Available Commands
+
+| Command | Description | Value | Default Thresholds |
+|---------|-------------|-------|--------------------|
+| `uptime` | Seconds since server start | seconds | W:`3600:`, C:`300:` |
+| `connections` | Threads_connected vs max_connections | percent | W:`80`, C:`95` |
+| `replication` | Replication lag, thread state | seconds behind | W:`60`, C:`300` |
+| `slowqueries` | Slow_queries counter since start | count | W:`100`, C:`1000` |
+| `latency` | SELECT 1 round-trip time | milliseconds | W:`100`, C:`500` |
+
+Thresholds are standard **Nagios ranges**: `95` alerts above 95, `300:` alerts below 300, `10:20` alerts outside the interval.
+
+### Replication Semantics
+
+- **OK/WARNING/CRITICAL** on `Seconds_Behind_Source` against the thresholds
+- **CRITICAL immediately** when the IO or SQL thread is stopped (the last replication error is included in the output)
+- **CRITICAL immediately** when the lag is NULL while threads run
+- **UNKNOWN** when the server is not a replica
+- Both modern (`Replica_*`/`Source_*`) and legacy (`Slave_*`/`Master_*`) column names are supported
+
+## ⚙️ Configuration
+
+Create `check_mysql.ini` next to the plugin, in the working directory, or in `/usr/local/etc/nagios` / `/etc/nagios`:
+
+### Direct Connection
+
+```ini
+[mysql]
+host = db.example.com
+port = 3306
+user = monitoring
+password = secret
+timeout = 10
+```
+
+### Connection Through an SSH Tunnel
+
+```ini
+[mysql]
+# Host/port as seen FROM THE BASTION
+host = 10.0.0.12
+port = 3306
+user = monitoring
+password = secret
+timeout = 10
+
+[ssh]
+host = bastion.example.com
+port = 22
+user = monitoring
+private_key = ~/.ssh/id_ed25519
+# or: password = only-if-no-key
+```
+
+When the `[ssh]` section is present, the plugin opens the tunnel first and connects to MySQL through it; remove the section to connect directly.
+
+### MySQL Monitoring User
+
+```sql
+CREATE USER 'monitoring'@'%' IDENTIFIED BY 'secret';
+GRANT USAGE, REPLICATION CLIENT ON *.* TO 'monitoring'@'%';
+```
+
+`REPLICATION CLIENT` (or `REPLICATION_SLAVE_ADMIN` on MySQL 8+) is only needed for the `replication` command.
+
+## 🔧 Command Line Options
+
+| Option | Description | Example |
+|--------|-------------|---------|
+| `-c, --config` | Configuration file path | `-c /custom/path/config.ini` |
+| `-H, --hostname` | MySQL host (overrides `[mysql]`) | `-H db2.example.com` |
+| `-P, --port` | MySQL port (overrides `[mysql]`) | `-P 3307` |
+| `-W, --warning` | Warning threshold (Nagios range) | `-W 80` |
+| `-C, --critical` | Critical threshold (Nagios range) | `-C 95` |
+| `-v, --verbose` | Verbosity level | `-v`, `-vv`, `-vvv` |
+| `--version` | Show version | `--version` |
+
+## 🏢 Nagios Integration
+
+### Command Definitions
+
+```cfg
+# MySQL Commands
+define command {
+    command_name    check_mysql_uptime
+    command_line    $USER1$/check_mysql/bin/check_mysql uptime -H $HOSTADDRESS$
+}
+
+define command {
+    command_name    check_mysql_connections
+    command_line    $USER1$/check_mysql/bin/check_mysql connections -H $HOSTADDRESS$ -W 80 -C 95
+}
+
+define command {
+    command_name    check_mysql_replication
+    command_line    $USER1$/check_mysql/bin/check_mysql replication -H $HOSTADDRESS$ -W 60 -C 300
+}
+
+define command {
+    command_name    check_mysql_slowqueries
+    command_line    $USER1$/check_mysql/bin/check_mysql slowqueries -H $HOSTADDRESS$ -W 100 -C 1000
+}
+
+define command {
+    command_name    check_mysql_latency
+    command_line    $USER1$/check_mysql/bin/check_mysql latency -H $HOSTADDRESS$ -W 100 -C 500
+}
+```
+
+### Service Definitions
+
+```cfg
+# MySQL Services
+define service {
+    use                     generic-service
+    service_description     MYSQL_UPTIME
+    check_command           check_mysql_uptime
+    hostgroup_name          mysql
+}
+
+define service {
+    use                     generic-service
+    service_description     MYSQL_CONNECTIONS
+    check_command           check_mysql_connections
+    hostgroup_name          mysql
+}
+
+define service {
+    use                     generic-service
+    service_description     MYSQL_REPLICATION
+    check_command           check_mysql_replication
+    hostgroup_name          mysql-replicas
+}
+
+define service {
+    use                     generic-service
+    service_description     MYSQL_SLOWQUERIES
+    check_command           check_mysql_slowqueries
+    hostgroup_name          mysql
+}
+
+define service {
+    use                     generic-service
+    service_description     MYSQL_LATENCY
+    check_command           check_mysql_latency
+    hostgroup_name          mysql
+}
+```
+
+## 🏗️ Architecture
+
+This plugin follows **clean architecture** principles with clear separation of concerns:
+
+```
+check_mysql/
+├── 📁 cli/                     # Command-line interface
+│   ├── commands/               # Individual command handlers
+│   │   ├── uptime.py          # Uptime command
+│   │   ├── connections.py     # Connections command
+│   │   ├── replication.py     # Replication command
+│   │   ├── slowqueries.py     # Slow queries command
+│   │   └── latency.py         # Latency command
+│   ├── decorators.py          # Common CLI decorators
+│   └── handlers.py            # Shared command execution path
+├── 📁 core/                    # Core business logic
+│   ├── config.py              # Configuration handling
+│   ├── connection.py          # Direct / SSH tunnel connector
+│   ├── mysql_client.py        # MySQL query client
+│   ├── exceptions.py          # Custom exceptions
+│   ├── models.py              # Dataclasses, TypedDicts, Protocols
+│   ├── nagios.py              # Nagios plugin framework
+│   └── logging_config.py      # Logging configuration
+├── 📁 services/                # Business services
+│   ├── uptime_service.py      # Uptime business logic
+│   ├── connections_service.py # Connections business logic
+│   ├── replication_service.py # Replication business logic
+│   ├── slowqueries_service.py # Slow queries business logic
+│   └── latency_service.py     # Latency business logic
+└── 📁 tests/                   # Comprehensive test suite
+    ├── unit/                   # Unit tests
+    ├── integration/            # CLI integration tests
+    └── fixtures/               # Test fixtures (mock client, datasets)
+```
+
+### Key Design Principles
+
+- **🎯 Single Responsibility** - Each module has one clear purpose
+- **🔌 Dependency Injection** - Services depend on a client Protocol, trivially mockable
+- **🧪 Testable** - The full test suite runs without any MySQL server
+- **📈 Extensible** - Adding a check = one service + one command file
+- **🔒 Secure** - No secrets in code, key-based SSH authentication
+
+## 🧪 Development
+
+### Development Setup
+
+```bash
+# Clone repository
+git clone https://github.com/lduchosal/check_mysql.git
+cd check_mysql
+
+# Install with PDM (creates .venv)
+pdm install
+pdm install -G dev
+```
+
+### Code Quality Tools
+
+```bash
+# The full quality pipeline (format, lint, types, docstrings, tests, gate)
+pdm run check
+
+# Individual steps
+pdm run lint          # ruff
+pdm run typecheck     # pyright (strict)
+pdm run test          # pytest + coverage
+pdm run metrics       # local quality metrics snapshot
+```
+
+See [doc/code-quality.md](doc/code-quality.md) for the full quality standard (blocking gate + best-ever ratchet).
+
+### Building & Publishing
+
+```bash
+# Quality checks only
+sh publish.sh --quality
+
+# Full pipeline: quality, SonarCloud gate, bump, build, publish, tag
+sh publish.sh --patch
+```
+
+## 🔍 Output Examples
+
+### Successful Check
+
+```
+MYSQL OK - Server up for 10 days, 0:00:00 (864000 seconds) | uptime=864000s;3600:;300:
+```
+
+### Warning State
+
+```
+MYSQL WARNING - Connections: 130/151 (86.09% of max_connections) | connections=86.09%;80;95
+```
+
+### Critical State (replication stopped)
+
+```
+MYSQL CRITICAL - Replication threads stopped (IO: No, SQL: Yes): error connecting to source
+```
+
+### Unknown State
+
+```
+UNKNOWN: Configuration file not found: check_mysql.ini
+```
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+| Issue | Solution |
+|-------|----------|
+| **Access denied** | Verify the monitoring user credentials and grants |
+| **SSH tunnel failures** | Check bastion reachability, key permissions (600) and known_hosts |
+| **Replication UNKNOWN** | The target is not a replica — point at the right server |
+| **Configuration Issues** | Validate config file syntax and search paths |
+
+### Debug Mode
+
+```bash
+# Maximum verbosity (SQL queries, tunnel lifecycle, method traces)
+check_mysql replication -vvv
+
+# Check a specific configuration
+check_mysql uptime -c /path/to/config.ini -vv
+```
+
+## 📊 Exit Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `0` | OK | Value within acceptable range |
+| `1` | WARNING | Value exceeds warning threshold |
+| `2` | CRITICAL | Value exceeds critical threshold, or replication stopped |
+| `3` | UNKNOWN | Error occurred during execution |
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how to get started:
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
+
+### Development Guidelines
+
+- Follow [PEP 8](https://pep8.org/) style guide
+- Add tests for new features
+- Update documentation as needed
+- `pdm run check` must be green before submitting
+
+## 📄 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with [nagiosplugin](https://nagiosplugin.readthedocs.io/) framework
+- Uses [PyMySQL](https://pymysql.readthedocs.io/) for MySQL connectivity
+- Uses [sshtunnel](https://sshtunnel.readthedocs.io/) for bastion traversal
+- Powered by [Click](https://click.palletsprojects.com/) for CLI interface
+
+---
+
+<div align="center">
+
+**[⭐ Star this repository](https://github.com/lduchosal/check_mysql)** if you find it useful!
+
+[🐛 Report Bug](https://github.com/lduchosal/check_mysql/issues) • [💡 Request Feature](https://github.com/lduchosal/check_mysql/issues) • [📖 Documentation](https://github.com/lduchosal/check_mysql/blob/main/README.md)
+
+</div>
+
+## 💖 Sponsor
+
+If this project helps you, consider supporting its development:
+
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-%E2%9D%A4-pink?logo=github)](https://github.com/sponsors/lduchosal)

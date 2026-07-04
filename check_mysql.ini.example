@@ -1,0 +1,27 @@
+# check_mysql configuration.
+# Copy this file to check_mysql.ini next to the plugin (or into
+# /usr/local/etc/nagios or /etc/nagios) and adjust the values.
+
+# --- Direct connection ------------------------------------------------------
+[mysql]
+host = db.example.com
+port = 3306
+user = monitoring
+password = secret
+# Optional default schema:
+#database = mydb
+# Connection timeout in seconds:
+timeout = 10
+
+# --- SSH tunnel (optional) --------------------------------------------------
+# When this section is present, the plugin first opens an SSH tunnel to the
+# bastion below, then connects to [mysql] host:port THROUGH the tunnel
+# (the MySQL host is resolved from the bastion's point of view).
+#
+#[ssh]
+#host = bastion.example.com
+#port = 22
+#user = monitoring
+# Authenticate with a private key (recommended) or a password:
+#private_key = ~/.ssh/id_ed25519
+#password = only-if-no-key
