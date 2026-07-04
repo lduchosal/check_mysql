@@ -1,7 +1,7 @@
 ---
 id: 957
 title: "SEC / Report over-privileged MySQL accounts"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-07-04T11:40:43
@@ -70,6 +70,22 @@ au format Nagios (OK / WARNING / CRITICAL + perfdata).
 - tests/integration/test_cli_integration.py : TestSecurityCommand (OK/WARNING/CRITICAL/whitelist ini) + `security` dans --help
 - tests/e2e/test_local_server.py : TestSecurityE2E tolérant (0 si grant présent, UNKNOWN sinon)
 - scripts/quality_metrics.py + doc/code-quality.md : palier 3 (min_file_cov 75 → 90 %)
+- check_mysql/core/provisioning.py : `GRANT SELECT ON mysql.user` ajouté au provisioning
+  de `init` (statements exécutés et bloc SQL imprimé) — suivi de review
+- tests/unit/test_provisioning.py : assertions étendues au 3e GRANT
+- check_mysql/services/security_service.py + cli/commands/security.py : le user de
+  monitoring (`[mysql] user`) est exempté du seul critère wildcard-host — suivi de review
+  (le compte nagios@% créé par init déclenchait un WARNING sur toute install standard)
+
+- README.md § Security Audit Semantics : table des 5 critères (mapping CIS Benchmark /
+  mysql_secure_installation), liste des exemptions volontaires et des limites connues
+  (mots de passe faibles non vides, plugins d'auth legacy, validate_password, base test,
+  grants sur le schéma mysql, expiration, TLS) — suivi de review
+
+- security_service.py : audit verbeux — suivi de review. `-v` : nombre de comptes audités ;
+  `-vv` : comptes ignorés (verrouillés), exemptions appliquées (allowlist, monitoring user)
+  et verdict par compte (clean / FLAGGED + findings) ; `-vvv` : chaque critère évalué par
+  compte avec son résultat (ok / FLAGGED). 4 tests unitaires (capsys) sur la sortie stderr.
 
 ### Comportements obtenus
 - `check_mysql security` : compte les comptes à risque — anonymes, sans mot de passe
@@ -87,6 +103,12 @@ au format Nagios (OK / WARNING / CRITICAL + perfdata).
 - Écart assumé vs description : perfdata = compteur global (architecture mono-métrique
   du NagiosPlugin) ; les compteurs par catégorie sont dans la headline/long output
 - Grant manquant → UNKNOWN propre : `SELECT command denied…` (vérifié contre le serveur local)
+- `check_mysql init` crée (ou imprime) désormais le user avec le GRANT SELECT ON mysql.user
+  requis par `security` ; README (§ MySQL Monitoring User) aligné sur le bloc généré
+- Le user de monitoring n'est plus signalé pour son host `%` (il doit être joignable à
+  distance par design) mais reste soumis aux autres critères (sans mot de passe,
+  privilèges dangereux) ; le compte anonyme n'hérite jamais de l'exemption —
+  vérifié contre le serveur local : `MYSQL OK - 0 risky accounts out of 16 audited`
 
 ### Garde-fous
 - pdm run check vert : isort, format, lint, flake8, pyright strict, interrogate 100 %,

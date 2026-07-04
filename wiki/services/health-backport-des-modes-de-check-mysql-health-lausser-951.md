@@ -1,7 +1,7 @@
 ---
 id: 951
 title: "HEALTH / Backport des modes de check_mysql_health (lausser)"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-07-04T11:16:20
