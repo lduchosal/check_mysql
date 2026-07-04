@@ -130,8 +130,8 @@ def _weak_password(row: dict[str, Any]) -> bool:
     """
     Tell whether a native-auth account uses a well-known weak password.
 
-    Only ``mysql_native_password`` stores an unsalted, offline-comparable hash;
-    every other plugin (salted or external) is skipped, never a false positive.
+    Only ``mysql_native_password`` stores an unsalted, offline-comparable hash; every other plugin
+    (salted or external) is skipped, never a false positive.
     """
     if _text(row, "plugin").lower() != "mysql_native_password":
         return False
@@ -163,8 +163,8 @@ def _account_checks(
 
     Returns one (category, triggered, description) triple per criterion, so callers can log negative
     results too. The monitoring account (the user the plugin authenticates as) is exempted from the
-    wildcard-host criterion only; accounts listed as expected admins are exempted from the
-    remote-privileges criterion only. Both stay subject to every other check.
+    wildcard-host criterion only; accounts listed as expected admins are exempted from the remote-
+    privileges criterion only. Both stay subject to every other check.
     """
     user = _text(row, "User")
     wildcard_exempt = bool(monitoring_user) and user == monitoring_user

@@ -192,9 +192,9 @@ def get_security_admins(config: configparser.ConfigParser) -> frozenset[str]:
     """
     Expected-admin accounts (``user@host``) from the optional ``[security]`` section.
 
-    The ``admins`` option lists the accounts that are meant to hold powerful
-    privileges; they are exempted from the remote-privileges finding only, and
-    stay subject to every other check. Same parsing as :func:`get_security_allowlist`.
+    The ``admins`` option lists the accounts that are meant to hold powerful privileges; they are
+    exempted from the remote-privileges finding only, and stay subject to every other check. Same
+    parsing as :func:`get_security_allowlist`.
     """
     if not config.has_section("security"):
         return frozenset()
