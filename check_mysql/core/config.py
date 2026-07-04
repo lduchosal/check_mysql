@@ -177,10 +177,9 @@ def get_security_allowlist(config: configparser.ConfigParser) -> frozenset[str]:
     """
     Accounts (``user@host``) exempted by the optional ``[security]`` section.
 
-    The ``allow`` option holds comma- or newline-separated entries matching
-    the User and Host columns of mysql.user exactly. The option is read raw,
-    so ``%`` hosts need no escaping. Returns an empty set when the section or
-    the option is absent.
+    The ``allow`` option holds comma- or newline-separated entries matching the User and Host
+    columns of mysql.user exactly. The option is read raw, so ``%`` hosts need no escaping. Returns
+    an empty set when the section or the option is absent.
     """
     if not config.has_section("security"):
         return frozenset()

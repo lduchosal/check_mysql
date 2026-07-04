@@ -3,7 +3,10 @@ requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
 [project]
-name = "check-mysql"
+# "check-mysql" is rejected by PyPI as too similar to the existing "checkmysql"
+# project; the distribution ships as check-mysql-nagios (import package and CLI
+# entry point remain check_mysql).
+name = "check-mysql-nagios"
 dynamic = ["version"]
 authors = [
     {name = "lduchosal", email = "lduchosal@users.noreply.github.com"},

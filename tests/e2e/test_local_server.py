@@ -151,8 +151,8 @@ class TestSecurityE2E:
     """The security command against the real server."""
 
     def test_audits_or_unknown_without_grant(self, run_cli, ini_path):
-        """A huge ceiling accepts any audit result; a monitoring user without SELECT on
-        mysql.user yields UNKNOWN with the server's denial.
+        """A huge ceiling accepts any audit result; a monitoring user without SELECT on mysql.user
+        yields UNKNOWN with the server's denial.
         """
         result = run_cli("security", "-c", ini_path, "-W", HUGE, "-C", HUGE)
         assert result.returncode in (0, 3), result.stdout + result.stderr

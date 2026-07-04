@@ -100,7 +100,7 @@ class TestHostFindings:
         assert _result([_row("app", "10.0.%")])["value"] == 0
 
     def test_remote_root_is_flagged(self):
-        """root reachable from the network is reported by name."""
+        """Root reachable from the network is reported by name."""
         result = _result([_row("root", "10.0.0.5")])
         assert result["value"] == 1
         assert "root reachable remotely" in result["details"][1]
@@ -207,6 +207,58 @@ class TestMonitoringUserExemption:
         result = _result([_row("", "%")])
         assert "anonymous account" in result["details"][1]
         assert "wildcard host" in result["details"][1]
+
+
+class TestVerboseLogging:
+    """Per-criterion tracing at -vvv, verdicts and exemptions at -vv."""
+
+    def test_trace_details_every_criterion(self, capsys):
+        """-vvv logs each of the five criteria with its verdict per account."""
+        client = MockMySQLClient(user_accounts=[_row("app", "%")])
+        SecurityService(client, verbose_level=3).get_result()
+        err = capsys.readouterr().err
+        assert "'app'@'%': anonymous: ok" in err
+        assert "'app'@'%': no password: ok" in err
+        assert "'app'@'%': wildcard host: FLAGGED" in err
+        assert "'app'@'%': remote root: ok" in err
+        assert "'app'@'%': remote privileges: ok" in err
+
+    def test_debug_reports_skips_exemptions_and_verdicts(self, capsys):
+        """-vv explains skipped, exempted and clean accounts."""
+        rows = [
+            _row("locked", "%", account_locked="Y"),
+            _row("nagios", "%"),
+            _row("backup", "10.0.0.5", Super_priv="Y"),
+        ]
+        client = MockMySQLClient(user_accounts=rows)
+        SecurityService(
+            client,
+            verbose_level=2,
+            allowlist=frozenset({"backup@10.0.0.5"}),
+            monitoring_user="nagios",
+        ).get_result()
+        err = capsys.readouterr().err
+        assert "'locked'@'%': locked or no-login plugin, not audited" in err
+        assert "'nagios'@'%': wildcard host exempted (monitoring user)" in err
+        assert "'nagios'@'%': clean" in err
+        assert "'backup'@'10.0.0.5': allowlisted, exempt from every check" in err
+
+    def test_debug_summarises_flagged_accounts(self, capsys):
+        """-vv prints one FLAGGED line per risky account with its findings."""
+        rows = [_row("root", "10.0.0.5", Super_priv="Y")]
+        SecurityService(
+            MockMySQLClient(user_accounts=rows), verbose_level=2
+        ).get_result()
+        err = capsys.readouterr().err
+        assert (
+            "'root'@'10.0.0.5': FLAGGED — root reachable remotely, "
+            "remote privileges (SUPER)" in err
+        )
+
+    def test_silent_without_verbose(self, capsys):
+        """Level 0 emits nothing on stderr."""
+        SecurityService(MockMySQLClient()).get_result()
+        assert capsys.readouterr().err == ""
 
 
 class TestReporting:

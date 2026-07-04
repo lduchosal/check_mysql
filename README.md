@@ -1,7 +1,7 @@
 # 🐬 Check MySQL
 
-[![PyPI version](https://img.shields.io/pypi/v/check-mysql.svg)](https://pypi.org/project/check-mysql/)
-[![Python versions](https://img.shields.io/pypi/pyversions/check-mysql.svg)](https://pypi.org/project/check-mysql/)
+[![PyPI version](https://img.shields.io/pypi/v/check-mysql-nagios.svg)](https://pypi.org/project/check-mysql-nagios/)
+[![Python versions](https://img.shields.io/pypi/pyversions/check-mysql-nagios.svg)](https://pypi.org/project/check-mysql-nagios/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build](https://github.com/lduchosal/check_mysql/actions/workflows/python-package.yml/badge.svg)](https://github.com/lduchosal/check_mysql/actions/workflows/python-package.yml)
 [![Publish](https://github.com/lduchosal/check_mysql/actions/workflows/publish.yml/badge.svg)](https://github.com/lduchosal/check_mysql/actions/workflows/publish.yml)
@@ -36,7 +36,7 @@ python -m venv /usr/local/libexec/nagios/check_mysql
 source /usr/local/libexec/nagios/check_mysql/bin/activate
 
 # Install from PyPI
-pip install check-mysql
+pip install check-mysql-nagios
 
 # Or install from source
 pip install git+https://github.com/lduchosal/check_mysql.git

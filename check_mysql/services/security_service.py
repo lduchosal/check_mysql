@@ -85,34 +85,39 @@ def _dangerous_privileges(row: dict[str, Any]) -> list[str]:
     ]
 
 
-def _account_issues(
+def _account_checks(
     row: dict[str, Any], monitoring_user: str = ""
-) -> list[tuple[str, str]]:
+) -> list[tuple[str, bool, str]]:
     """
-    Return the (category, description) findings for one mysql.user row.
+    Evaluate every audit criterion for one mysql.user row.
 
-    The monitoring account (the user the plugin authenticates as) is exempted
-    from the wildcard-host finding only — it must be remotely reachable to do
-    its job — and stays subject to every other check.
+    Returns one (category, triggered, description) triple per criterion, so callers can log
+    negative results too. The monitoring account (the user the plugin authenticates as) is
+    exempted from the wildcard-host criterion only — it must be remotely reachable to do its
+    job — and stays subject to every other check.
     """
-    issues: list[tuple[str, str]] = []
     user = _text(row, "User")
-    if not user:
-        issues.append(("anonymous", "anonymous account"))
-    if _lacks_password(row):
-        issues.append(("no password", "no password"))
-    if _text(row, "Host") in _WILDCARD_HOSTS and (
-        not monitoring_user or user != monitoring_user
-    ):
-        issues.append(("wildcard host", "wildcard host"))
-    if user == "root" and not _is_local(row):
-        issues.append(("remote root", "root reachable remotely"))
-    if not _is_local(row):
-        privileges = _dangerous_privileges(row)
-        if privileges:
-            description = f"remote privileges ({', '.join(privileges)})"
-            issues.append(("remote privileges", description))
-    return issues
+    wildcard_exempt = bool(monitoring_user) and user == monitoring_user
+    privileges = [] if _is_local(row) else _dangerous_privileges(row)
+    return [
+        ("anonymous", not user, "anonymous account"),
+        ("no password", _lacks_password(row), "no password"),
+        (
+            "wildcard host",
+            _text(row, "Host") in _WILDCARD_HOSTS and not wildcard_exempt,
+            "wildcard host",
+        ),
+        (
+            "remote root",
+            user == "root" and not _is_local(row),
+            "root reachable remotely",
+        ),
+        (
+            "remote privileges",
+            bool(privileges),
+            f"remote privileges ({', '.join(privileges)})",
+        ),
+    ]
 
 
 class SecurityService:
@@ -137,17 +142,58 @@ class SecurityService:
         self.monitoring_user = monitoring_user
         self.logger = get_verbose_logger(__name__, verbose_level)
 
+    def _audit_row(self, row: dict[str, Any]) -> list[tuple[str, str]]:
+        """
+        Evaluate one account, logging each criterion and its verdict.
+
+        Trace (-vvv) shows every criterion with its result; debug (-vv) shows the exemptions
+        applied and the per-account verdict. Returns the triggered (category, description)
+        findings — empty for exempt or clean accounts.
+        """
+        account = _account(row)
+        if f"{_text(row, 'User')}@{_text(row, 'Host')}" in self.allowlist:
+            self.logger.debug(f"{account}: allowlisted, exempt from every check")
+            return []
+        if (
+            _text(row, "Host") in _WILDCARD_HOSTS
+            and self.monitoring_user
+            and _text(row, "User") == self.monitoring_user
+        ):
+            self.logger.debug(f"{account}: wildcard host exempted (monitoring user)")
+        checks = _account_checks(row, self.monitoring_user)
+        for category, triggered, _ in checks:
+            verdict = "FLAGGED" if triggered else "ok"
+            self.logger.trace(f"{account}: {category}: {verdict}")
+        issues = [
+            (category, description)
+            for category, triggered, description in checks
+            if triggered
+        ]
+        if issues:
+            findings = ", ".join(description for _, description in issues)
+            self.logger.debug(f"{account}: FLAGGED — {findings}")
+        else:
+            self.logger.debug(f"{account}: clean")
+        return issues
+
     def get_result(self) -> ServiceResult:
         """Return the number of risky accounts with one detail line each."""
         self.logger.method_entry("get_result")
 
         accounts = self.client.get_user_accounts()
-        audited = [row for row in accounts if not _cannot_log_in(row)]
+        audited: list[dict[str, Any]] = []
+        for row in accounts:
+            if _cannot_log_in(row):
+                self.logger.debug(
+                    f"{_account(row)}: locked or no-login plugin, not audited"
+                )
+            else:
+                audited.append(row)
+        self.logger.info(f"Auditing {len(audited)} of {len(accounts)} accounts")
+
         flagged: list[tuple[str, list[tuple[str, str]]]] = []
         for row in audited:
-            if f"{_text(row, 'User')}@{_text(row, 'Host')}" in self.allowlist:
-                continue
-            issues = _account_issues(row, self.monitoring_user)
+            issues = self._audit_row(row)
             if issues:
                 flagged.append((_account(row), issues))
 
