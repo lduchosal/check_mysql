@@ -65,11 +65,7 @@ STEP=0
 # Function to print step headers
 print_step() {
     STEP=$((STEP + 1))
-    echo ""
-    echo "${BLUE}${BOLD}═══════════════════════════════════════════════════════════════${NC}"
-    echo "${BLUE}${BOLD}  $STEP/$STEPS $1${NC}"
-    echo "${BLUE}${BOLD}═══════════════════════════════════════════════════════════════${NC}"
-    echo ""
+    echo "${BLUE}${BOLD}[$STEP/$STEPS] $1${NC}"
 }
 
 # Function to print success message
@@ -83,16 +79,23 @@ print_error() {
     exit 1
 }
 
-# Function to run command with error handling
+# Function to run command with error handling. Output is captured and only
+# replayed on failure: the publish log stays small (it lands in the context of
+# the model driving the release), while a failing step still dumps everything
+# needed for immediate debugging.
 run_command() {
     local cmd="$1"
     local description="$2"
+    local output_file
 
-    echo "${YELLOW}→ Running: ${cmd}${NC}"
-
-    if eval "$cmd"; then
+    output_file=$(mktemp)
+    if eval "$cmd" >"$output_file" 2>&1; then
+        rm -f "$output_file"
         print_success "$description completed successfully"
     else
+        echo "${YELLOW}→ Failed: ${cmd}${NC}"
+        cat "$output_file"
+        rm -f "$output_file"
         print_error "$description failed"
     fi
 }
@@ -216,11 +219,7 @@ elif [ -f .env ] && grep -q '^SONAR_TOKEN=' .env 2>/dev/null; then
 fi
 if [ "$HAS_SONAR_TOKEN" = true ]; then
     run_command "git push" "Pushing commits for analysis"
-    if python scripts/sonar_gate.py --timeout 900 --interval 20; then
-        print_success "Sonarcloud quality gate passed"
-    else
-        print_error "Sonarcloud quality gate FAILED — aborting publish"
-    fi
+    run_command "python scripts/sonar_gate.py --timeout 900 --interval 20" "Sonarcloud quality gate"
 else
     echo "${YELLOW}WARN: SONAR_TOKEN absent — skipping SonarCloud gate.${NC}"
     echo "${YELLOW}      Create the project on sonarcloud.io (key lduchosal_check_mysql),${NC}"
