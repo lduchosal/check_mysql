@@ -74,6 +74,13 @@ Gate vert au palier 2 après l'audit des comptes (task #957) : resserrage de
 Prochaines cibles : `test_cov` → 95 % en plancher absolu (le cliquet le tient
 déjà plus haut), `max_func_lines` → 40.
 
+### Palier 4 (2026-07-04, sync doc + audit weak/expired passwords)
+
+Gate vert au palier 3 après l'extension de l'audit (weak/expired passwords,
+`[security] admins`) et la synchronisation de la doc (task #965) : resserrage
+de `test_cov` 90 → 95 % et `max_func_lines` 50 → 45 (mesuré : 99,64 % / 42
+lignes). Prochaines cibles : `max_func_lines` → 40, `min_file_cov` → 95 %.
+
 ## Tests end-to-end (serveur local)
 
 `tests/e2e/` pilote le **binaire installé** (`.venv/bin/check_mysql`) en

@@ -1,6 +1,6 @@
 # check_mysql configuration.
-# Copy this file to check_mysql.ini next to the plugin (or into
-# /usr/local/etc/nagios or /etc/nagios) and adjust the values.
+# Copy this file to check_mysql.ini in the plugin's working directory (or
+# into /usr/local/etc/nagios or /etc/nagios) and adjust the values.
 
 # --- Direct connection ------------------------------------------------------
 [mysql]
