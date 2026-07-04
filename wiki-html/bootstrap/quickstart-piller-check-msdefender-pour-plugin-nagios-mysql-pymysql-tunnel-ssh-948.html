@@ -1,0 +1,113 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>#948 — QUICKSTART / Piller check_msdefender pour plugin Nagios MySQL (pymysql + tunnel SSH) — kenboard wiki</title><style>body{margin:0;font-family:system-ui,sans-serif;color:#222;background:#fff}
+.layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+nav.sidebar{background:#f6f8fa;border-right:1px solid #d0d7de;padding:16px;
+  overflow-y:auto;font-size:13px}
+nav.sidebar h1{font-size:14px;text-transform:uppercase;color:#57606a;margin:0 0 12px}
+nav.sidebar ul{list-style:none;padding:0;margin:0}
+nav.sidebar li{margin:2px 0}
+nav.sidebar a{color:#0969da;text-decoration:none}
+nav.sidebar a:hover{text-decoration:underline}
+nav.sidebar a.current{font-weight:600;color:#1a1a1a}
+main{padding:24px 32px;max-width:900px}
+main h1{margin-top:0}
+main code{background:#f6f8fa;padding:1px 4px;border-radius:3px;font-size:90%}
+main pre{background:#f6f8fa;padding:12px;border-radius:6px;overflow-x:auto}
+main pre code{background:transparent;padding:0}
+main a{color:#0969da}
+/* Task detail (#376f — mirrors templates/modals/task_fullscreen.html) */
+.fullscreen-card{background:#fff;border:1px solid #d0d7de;border-radius:10px;
+  padding:32px 36px;max-width:760px}
+.fullscreen-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.fullscreen-id{font-size:12px;color:#57606a;font-weight:600}
+.fullscreen-status{font-size:11px;text-transform:uppercase;letter-spacing:.5px;
+  color:#57606a;background:#f6f8fa;padding:3px 8px;border-radius:10px}
+.fullscreen-status.status-todo{background:#ddf4ff;color:#0969da}
+.fullscreen-status.status-doing{background:#fff8c5;color:#9a6700}
+.fullscreen-status.status-review{background:#dafbe1;color:#1a7f37}
+.fullscreen-status.status-done{background:#eaeef2;color:#57606a}
+.fullscreen-title{font-size:22px;font-weight:700;margin:0 0 16px;line-height:1.3}
+.fullscreen-meta{display:flex;align-items:center;gap:10px;margin-bottom:20px;
+  font-size:13px;color:#57606a}
+.task-avatar{width:28px;height:28px;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px}
+.fs-who{font-weight:600;color:#222}
+.fullscreen-desc{font-size:14px;line-height:1.7;border-top:1px solid #d0d7de;
+  padding-top:16px}
+.fullscreen-desc h1,.fullscreen-desc h2,.fullscreen-desc h3{margin-top:16px;
+  margin-bottom:8px}
+.fullscreen-desc pre{background:#f6f8fa;border-radius:4px;padding:12px;
+  overflow-x:auto;font-size:12px}
+.fullscreen-desc code{background:#f6f8fa;border-radius:3px;padding:1px 4px;font-size:12px}
+.fullscreen-desc pre code{background:transparent;padding:0}
+.fullscreen-desc ul,.fullscreen-desc ol{padding-left:20px}
+.wiki-nav{margin-top:20px;padding-top:12px;border-top:1px solid #d0d7de;
+  font-size:13px;color:#57606a}
+.wiki-nav a{color:#0969da}
+/* Build footer (#743) — version of ``ken`` + generation timestamp. */
+.wiki-footer{margin-top:40px;padding-top:12px;border-top:1px solid #d0d7de;
+  font-size:11px;color:#57606a;text-align:right}
+</style></head><body><div class="layout"><nav class="sidebar"><h1>kenboard wiki</h1><ul><li><a href="../index.html">Home</a></li><li style="padding-left:0px"><a href="index.html" class="current">Bootstrap & Organisation</a></li><li style="padding-left:0px"><a href="../cli/index.html">CLI (commandes Nagios)</a></li><li style="padding-left:0px"><a href="../core/index.html">Core (config, connexion, client, nagios)</a></li><li style="padding-left:0px"><a href="../services/index.html">Services (checks)</a></li><li style="padding-left:0px"><a href="../quality/index.html">Qualité & Gates</a></li><li style="padding-left:0px"><a href="../ci/index.html">CI & Publication</a></li><li style="padding-left:0px"><a href="../doc/index.html">Documentation</a></li><li style="padding-left:0px"><a href="../log/index.html">Journal</a></li><li style="padding-left:12px"><a href="../log/2026-07-04.html">2026-07-04</a></li></ul></nav><main><div class="fullscreen-card"><div class="fullscreen-header"><span class="fullscreen-id">#948</span><span class="fullscreen-status status-review">review</span></div><h2 class="fullscreen-title">QUICKSTART / Piller check_msdefender pour plugin Nagios MySQL (pymysql + tunnel SSH)</h2><div class="fullscreen-meta"><div class="task-avatar" style="background:#0a3069">C</div><span class="fs-who">Claude</span><span>Classified 2026-07-04</span><span>by key:f156efe4-abe2-4a76-affc-d07705fb5c4f</span></div><div class="fullscreen-desc"><p>Piller le projet /Users/q/Projects/check_msdefender (qualité, CI, documentation, architecture, organisation) pour réaliser <strong>check_mysql</strong>, un plugin Nagios pour MySQL avec connexion directe (PyMySQL) et connexion par tunnel SSH.</p>
+<h2>Objectif</h2>
+<p>Un plugin Nagios de qualité maximale (tests, doc, UX) sur le standard lduchosal établi dans kenboard/check_msdefender.</p>
+<h2>À piller de check_msdefender</h2>
+<ul>
+<li><strong>Architecture</strong> : cli/ (click group + commands + decorators) / core/ (config, client, nagios, exceptions, logging_config, models Protocol+TypedDict) / services/ (un service par check, injectable, testable via Protocol)</li>
+<li><strong>Qualité</strong> : PDM + pyproject, ruff (isort+format+lint), pyright strict + typings/*.pyi, flake8 + flake8-docstrings(-complete), interrogate ≥ 95 %, refurb, vulture, docformatter, absolufy-imports, pytest + coverage</li>
+<li><strong>Gate bloquant</strong> : scripts/quality_metrics.py (plafonds/planchers absolus + cliquet best-ever vs doc/quality-history.csv), pdm run check composite</li>
+<li><strong>CI</strong> : .github/workflows/python-package.yml (matrix 3.10→3.13 + job SonarCloud), publish.yml, publish.sh, sonar-project.properties, scripts/sonar_gate.py</li>
+<li><strong>Doc</strong> : README complet (badges, quickstart, commandes, config, intégration Nagios, architecture, troubleshooting, exit codes), doc/code-quality.md, LICENSE MIT, check_mysql.ini.example</li>
+<li><strong>Organisation</strong> : pytest.ini, .flake8, .gitignore, .env.example, tests/{unit,fixtures,integration}</li>
+</ul>
+<h2>Fonctionnel</h2>
+<p>Connexion :
+- Directe : PyMySQL vers host:port
+- Tunnel SSH : sshtunnel (paramiko) vers un bastion, puis PyMySQL à travers le tunnel
+- Configuration via check_mysql.ini (section [mysql] + section [ssh] optionnelle qui active le tunnel)</p>
+<p>Checks (commandes CLI, sortie et exit codes Nagios 0/1/2/3, perfdata) :
+- uptime : secondes depuis le démarrage (alerte si redémarrage récent, seuils bas)
+- connections : Threads_connected en % de max_connections
+- replication : Seconds_Behind_Source + état des threads IO/SQL (CRITICAL si arrêtés)
+- slowqueries : compteur Slow_queries
+- latency : temps de réponse d'un SELECT 1 en ms</p>
+<p>UX : -c/--config, -W/--warning, -C/--critical (plages Nagios), -v/-vv/-vvv, --version, messages UNKNOWN propres.</p>
+<h2>Garde-fous attendus</h2>
+<ul>
+<li>pdm run check entièrement vert (isort, format, lint, flake8, pyright strict, interrogate, refurb, vulture, tests+coverage, metrics-gate)</li>
+<li>Tests unitaires (services via mock client), fixtures, intégration CLI (CliRunner) — sans besoin d'un MySQL réel</li>
+<li>Gate palier 1 serré (greenfield) : max_func_lines ≤ 60, c901_over_10 = 0, test_cov ≥ 80 %, docstring_cov ≥ 95 %</li>
+</ul>
+<hr />
+<h2>Résolution</h2>
+<h3>Modifications</h3>
+<ul>
+<li>check_mysql/ : package complet, architecture cli/core/services pillée de check_msdefender</li>
+<li>core/config.py : load_config (cwd, /usr/local/etc/nagios, /etc/nagios) + get_mysql_config (overrides CLI -H/-P) + get_ssh_config ([ssh] optionnelle, clé ou mot de passe, expanduser)</li>
+<li>core/connection.py : MySQLConnector — direct PyMySQL ou tunnel sshtunnel vers bastion (local_bind 127.0.0.1:0, teardown propre en cas d'échec MySQL à travers le tunnel)</li>
+<li>core/mysql_client.py : MySQLClient (context manager, connexion lazy) — get_global_status/variables, get_replica_status (SHOW REPLICA STATUS + fallback SHOW SLAVE STATUS), ping (SELECT 1 chronométré)</li>
+<li>core/nagios.py : NagiosPlugin (plages Nagios standard via ScalarContext, perfdata avec uom, CriticalError → exit 2, Exception → UNKNOWN 3), MySQLSummary (1re ligne = headline, suite = long output)</li>
+<li>core/models.py : dataclasses MySQLConfig/SSHConfig, ServiceResult TypedDict (value requis), Protocols MySQLClientProtocol/CheckServiceProtocol</li>
+<li>services/ : uptime, connections (% de max_connections), replication (colonnes modernes Replica_<em>/Source_</em> et legacy Slave_<em>/Master_</em>, CRITICAL immédiat si threads arrêtés ou lag NULL), slowqueries (+ taux/heure), latency</li>
+<li>cli/ : click group + décorateurs communs (-c, -H, -P, -W, -C, -v) + handlers.run_check partagé + 5 commandes ; seuils par défaut : uptime 3600:/300:, connections 80/95, replication 60/300, slowqueries 100/1000, latency 100/500</li>
+<li>tests/ : 78 tests (unit services/config/connection/client/nagios/logging + intégration CLI CliRunner) — zéro MySQL requis (mock Protocol + fakes + monkeypatch)</li>
+<li>typings/ : stubs pyright strict pour nagiosplugin (copié), pymysql et sshtunnel (écrits, surface utilisée)</li>
+<li>Qualité/CI : pyproject.toml (PDM, scripts identiques à check_msdefender + smoke), scripts/quality_metrics.py (gate palier 1 serré greenfield : max_func_lines 60, c901 0, test_cov ≥ 80, min_file_cov ≥ 50), scripts/sonar_gate.py (clé lduchosal_check_mysql, branche main), publish.sh, .github/workflows (matrix 3.10→3.13 + SonarCloud, publish manuel), sonar-project.properties, pytest.ini, .flake8, .gitignore, .env.example</li>
+<li>Doc : README.md complet (badges, quickstart, tableau commandes, config directe/tunnel, user MySQL minimal, intégration Nagios cfg, architecture, exemples de sortie, troubleshooting, exit codes), doc/code-quality.md, check_mysql.ini.example, LICENSE MIT, CLAUDE.md (section qualité)</li>
+<li>doc/quality-history.csv : premier snapshot enregistré (metrics-record)</li>
+<li>Supprimé : main.py (scaffold PyCharm)</li>
+</ul>
+<h3>Comportements obtenus</h3>
+<ul>
+<li>check_mysql {uptime,connections,replication,slowqueries,latency} avec sortie Nagios (MYSQL OK/WARNING/CRITICAL + perfdata avec unités s/%/c/ms) et exit codes 0/1/2/3</li>
+<li>Connexion directe ou via tunnel SSH selon la présence de [ssh] dans check_mysql.ini ; -H/-P surchargent la cible sans éditer la config (Nagios $HOSTADDRESS$)</li>
+<li>replication : CRITICAL immédiat si thread IO/SQL arrêté (avec Last_IO_Error) ou lag NULL ; UNKNOWN si pas un replica ; compatible MySQL ≥ 8.0.22 et anciens serveurs</li>
+<li>Plages Nagios complètes acceptées en -W/-C (95, 300:, 10:20)</li>
+<li>Smoke test réel : --help, --version, config manquante → UNKNOWN exit 3</li>
+</ul>
+<h3>Garde-fous</h3>
+<ul>
+<li>pdm run check : VERT de bout en bout (isort, format-check, lint ruff, flake8+docstrings, pyright strict 0 erreur, interrogate 100 %, refurb 0, vulture 0, 78 tests passés, metrics-gate PASS)</li>
+<li>Couverture : 99.81 % total, min par fichier 98.18 % (planchers gate : 80 / 50)</li>
+<li>Métriques : max_func_lines 39 (plafond 60), c901_over_10 0, ruff_debt 0</li>
+<li>Gate palier 1 : PASS + snapshot enregistré dans doc/quality-history.csv</li>
+<li>Rien n'est commité : l'arbre de travail attend ta review (repo git sans commit initial)</li>
+</ul></div><div class="wiki-nav"><a href="index.html">← retour à bootstrap</a> · <a href="../log/2026-07-04.html">voir log</a></div></div><footer class="wiki-footer">Généré le 2026-07-04 08:14:07 UTC par kenboard 0.2.3</footer></main></div></body></html>
