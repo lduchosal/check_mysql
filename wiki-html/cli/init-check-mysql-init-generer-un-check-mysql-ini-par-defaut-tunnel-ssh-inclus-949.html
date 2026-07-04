@@ -1,0 +1,87 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>#949 — INIT / check_mysql init : générer un check_mysql.ini par défaut (tunnel SSH inclus) — kenboard wiki</title><style>body{margin:0;font-family:system-ui,sans-serif;color:#222;background:#fff}
+.layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+nav.sidebar{background:#f6f8fa;border-right:1px solid #d0d7de;padding:16px;
+  overflow-y:auto;font-size:13px}
+nav.sidebar h1{font-size:14px;text-transform:uppercase;color:#57606a;margin:0 0 12px}
+nav.sidebar ul{list-style:none;padding:0;margin:0}
+nav.sidebar li{margin:2px 0}
+nav.sidebar a{color:#0969da;text-decoration:none}
+nav.sidebar a:hover{text-decoration:underline}
+nav.sidebar a.current{font-weight:600;color:#1a1a1a}
+main{padding:24px 32px;max-width:900px}
+main h1{margin-top:0}
+main code{background:#f6f8fa;padding:1px 4px;border-radius:3px;font-size:90%}
+main pre{background:#f6f8fa;padding:12px;border-radius:6px;overflow-x:auto}
+main pre code{background:transparent;padding:0}
+main a{color:#0969da}
+/* Task detail (#376f — mirrors templates/modals/task_fullscreen.html) */
+.fullscreen-card{background:#fff;border:1px solid #d0d7de;border-radius:10px;
+  padding:32px 36px;max-width:760px}
+.fullscreen-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.fullscreen-id{font-size:12px;color:#57606a;font-weight:600}
+.fullscreen-status{font-size:11px;text-transform:uppercase;letter-spacing:.5px;
+  color:#57606a;background:#f6f8fa;padding:3px 8px;border-radius:10px}
+.fullscreen-status.status-todo{background:#ddf4ff;color:#0969da}
+.fullscreen-status.status-doing{background:#fff8c5;color:#9a6700}
+.fullscreen-status.status-review{background:#dafbe1;color:#1a7f37}
+.fullscreen-status.status-done{background:#eaeef2;color:#57606a}
+.fullscreen-title{font-size:22px;font-weight:700;margin:0 0 16px;line-height:1.3}
+.fullscreen-meta{display:flex;align-items:center;gap:10px;margin-bottom:20px;
+  font-size:13px;color:#57606a}
+.task-avatar{width:28px;height:28px;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px}
+.fs-who{font-weight:600;color:#222}
+.fullscreen-desc{font-size:14px;line-height:1.7;border-top:1px solid #d0d7de;
+  padding-top:16px}
+.fullscreen-desc h1,.fullscreen-desc h2,.fullscreen-desc h3{margin-top:16px;
+  margin-bottom:8px}
+.fullscreen-desc pre{background:#f6f8fa;border-radius:4px;padding:12px;
+  overflow-x:auto;font-size:12px}
+.fullscreen-desc code{background:#f6f8fa;border-radius:3px;padding:1px 4px;font-size:12px}
+.fullscreen-desc pre code{background:transparent;padding:0}
+.fullscreen-desc ul,.fullscreen-desc ol{padding-left:20px}
+.wiki-nav{margin-top:20px;padding-top:12px;border-top:1px solid #d0d7de;
+  font-size:13px;color:#57606a}
+.wiki-nav a{color:#0969da}
+/* Build footer (#743) — version of ``ken`` + generation timestamp. */
+.wiki-footer{margin-top:40px;padding-top:12px;border-top:1px solid #d0d7de;
+  font-size:11px;color:#57606a;text-align:right}
+</style></head><body><div class="layout"><nav class="sidebar"><h1>kenboard wiki</h1><ul><li><a href="../index.html">Home</a></li><li style="padding-left:0px"><a href="../bootstrap/index.html">Bootstrap & Organisation</a></li><li style="padding-left:0px"><a href="index.html" class="current">CLI (commandes Nagios)</a></li><li style="padding-left:0px"><a href="../core/index.html">Core (config, connexion, client, nagios)</a></li><li style="padding-left:0px"><a href="../services/index.html">Services (checks)</a></li><li style="padding-left:0px"><a href="../quality/index.html">Qualité & Gates</a></li><li style="padding-left:0px"><a href="../ci/index.html">CI & Publication</a></li><li style="padding-left:0px"><a href="../doc/index.html">Documentation</a></li><li style="padding-left:0px"><a href="../log/index.html">Journal</a></li><li style="padding-left:12px"><a href="../log/2026-07-04.html">2026-07-04</a></li></ul></nav><main><div class="fullscreen-card"><div class="fullscreen-header"><span class="fullscreen-id">#949</span><span class="fullscreen-status status-done">done</span></div><h2 class="fullscreen-title">INIT / check_mysql init : générer un check_mysql.ini par défaut (tunnel SSH inclus)</h2><div class="fullscreen-meta"><div class="task-avatar" style="background:#0a3069">C</div><span class="fs-who">Claude</span><span>Classified 2026-07-04</span><span>by key:f156efe4-abe2-4a76-affc-d07705fb5c4f</span></div><div class="fullscreen-desc"><p>Ajouter une commande <code>check_mysql init</code> qui crée un fichier <code>check_mysql.ini</code> avec des paramètres par défaut raisonnables, y compris les réglages de tunnel SSH (ssh forwarding).</p>
+<h2>Comportement attendu</h2>
+<ul>
+<li><code>check_mysql init</code> écrit <code>check_mysql.ini</code> dans le répertoire courant (ou au chemin passé via <code>-c/--config</code>)</li>
+<li>Contenu généré : section <code>[mysql]</code> active avec des défauts raisonnables (host localhost, port 3306, user monitoring, timeout 10, database commenté) + section <code>[ssh]</code> complète mais commentée (host bastion, port 22, user, private_key ~/.ssh/id_ed25519, password alternatif) — dé-commenter la section active le tunnel</li>
+<li>Refuse d'écraser un fichier existant ; <code>--force</code> pour outrepasser</li>
+<li>Le fichier est créé en mode 600 (il contiendra un mot de passe)</li>
+<li>Sortie claire : chemin créé + prochaine étape (éditer les credentials)</li>
+</ul>
+<h2>Garde-fous attendus</h2>
+<ul>
+<li>Tests d'intégration CLI (CliRunner) : création, refus d'écrasement, --force, mode 600, le fichier généré est chargeable par load_config et get_ssh_config retourne None (section commentée)</li>
+<li>README mis à jour (quick start + tableau des commandes)</li>
+<li>pdm run check entièrement vert (gate + cliquet : test_cov ne doit pas régresser)</li>
+</ul>
+<hr />
+<h2>Résolution</h2>
+<h3>Modifications</h3>
+<ul>
+<li>check_mysql/core/config.py : DEFAULT_CONFIG_TEMPLATE ([mysql] actif avec défauts, [ssh] complet commenté) + write_default_config(path, force) — refuse d'écraser sans force (ConfigurationError), écrit en mode 600</li>
+<li>check_mysql/cli/commands/init.py : commande <code>init</code> (-c/--config, --force) — succès exit 0 avec next steps, erreur exit 1 sur stderr</li>
+<li>check_mysql/cli/commands/<strong>init</strong>.py : enregistrement de la commande</li>
+<li>tests/unit/test_config.py : 5 tests write_default_config (mode 600, fichier chargeable avec get_ssh_config None, présence de la doc tunnel dans le template, refus d'écrasement, --force)</li>
+<li>tests/integration/test_cli_integration.py : 4 tests CLI (création + mode 600, refus exit 1, --force, le fichier généré alimente réellement <code>check_mysql uptime</code>)</li>
+<li>README.md : quick start (<code>check_mysql init</code>), ligne dans le tableau des commandes, section Configuration</li>
+</ul>
+<h3>Comportements obtenus</h3>
+<ul>
+<li><code>check_mysql init</code> génère un check_mysql.ini prêt à éditer (mode 600) ; la connexion par défaut est directe, le tunnel SSH s'active en dé-commentant la section [ssh] livrée avec le template</li>
+<li><code>check_mysql init -c /chemin/custom.ini</code> et <code>--force</code> fonctionnent ; un fichier existant n'est jamais écrasé silencieusement</li>
+<li>Smoke test réel : création (mode 600 vérifié), relance → « already exists — use --force » exit 1, <code>check_mysql uptime</code> consomme le fichier généré</li>
+</ul>
+<h3>Garde-fous</h3>
+<ul>
+<li>pdm run check : VERT (isort, format-check, ruff, flake8, pyright strict 0, interrogate 100 %, refurb 0, vulture 0, 87 tests passés, metrics-gate PASS)</li>
+<li>Couverture : 99.82 % (cliquet best-ever respecté : 99.81 → 99.82), min par fichier 98.41 %</li>
+<li>Snapshot enregistré dans doc/quality-history.csv</li>
+<li>Non commité : en attente de ta review</li>
+</ul></div><div class="wiki-nav"><a href="index.html">← retour à cli</a> · <a href="../log/2026-07-04.html">voir log</a></div></div><footer class="wiki-footer">Généré le 2026-07-04 09:22:46 UTC par kenboard 0.2.3</footer></main></div></body></html>

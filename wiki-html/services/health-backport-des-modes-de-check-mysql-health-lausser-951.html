@@ -1,0 +1,121 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>#951 — HEALTH / Backport des modes de check_mysql_health (lausser) — kenboard wiki</title><style>body{margin:0;font-family:system-ui,sans-serif;color:#222;background:#fff}
+.layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+nav.sidebar{background:#f6f8fa;border-right:1px solid #d0d7de;padding:16px;
+  overflow-y:auto;font-size:13px}
+nav.sidebar h1{font-size:14px;text-transform:uppercase;color:#57606a;margin:0 0 12px}
+nav.sidebar ul{list-style:none;padding:0;margin:0}
+nav.sidebar li{margin:2px 0}
+nav.sidebar a{color:#0969da;text-decoration:none}
+nav.sidebar a:hover{text-decoration:underline}
+nav.sidebar a.current{font-weight:600;color:#1a1a1a}
+main{padding:24px 32px;max-width:900px}
+main h1{margin-top:0}
+main code{background:#f6f8fa;padding:1px 4px;border-radius:3px;font-size:90%}
+main pre{background:#f6f8fa;padding:12px;border-radius:6px;overflow-x:auto}
+main pre code{background:transparent;padding:0}
+main a{color:#0969da}
+/* Task detail (#376f — mirrors templates/modals/task_fullscreen.html) */
+.fullscreen-card{background:#fff;border:1px solid #d0d7de;border-radius:10px;
+  padding:32px 36px;max-width:760px}
+.fullscreen-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.fullscreen-id{font-size:12px;color:#57606a;font-weight:600}
+.fullscreen-status{font-size:11px;text-transform:uppercase;letter-spacing:.5px;
+  color:#57606a;background:#f6f8fa;padding:3px 8px;border-radius:10px}
+.fullscreen-status.status-todo{background:#ddf4ff;color:#0969da}
+.fullscreen-status.status-doing{background:#fff8c5;color:#9a6700}
+.fullscreen-status.status-review{background:#dafbe1;color:#1a7f37}
+.fullscreen-status.status-done{background:#eaeef2;color:#57606a}
+.fullscreen-title{font-size:22px;font-weight:700;margin:0 0 16px;line-height:1.3}
+.fullscreen-meta{display:flex;align-items:center;gap:10px;margin-bottom:20px;
+  font-size:13px;color:#57606a}
+.task-avatar{width:28px;height:28px;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px}
+.fs-who{font-weight:600;color:#222}
+.fullscreen-desc{font-size:14px;line-height:1.7;border-top:1px solid #d0d7de;
+  padding-top:16px}
+.fullscreen-desc h1,.fullscreen-desc h2,.fullscreen-desc h3{margin-top:16px;
+  margin-bottom:8px}
+.fullscreen-desc pre{background:#f6f8fa;border-radius:4px;padding:12px;
+  overflow-x:auto;font-size:12px}
+.fullscreen-desc code{background:#f6f8fa;border-radius:3px;padding:1px 4px;font-size:12px}
+.fullscreen-desc pre code{background:transparent;padding:0}
+.fullscreen-desc ul,.fullscreen-desc ol{padding-left:20px}
+.wiki-nav{margin-top:20px;padding-top:12px;border-top:1px solid #d0d7de;
+  font-size:13px;color:#57606a}
+.wiki-nav a{color:#0969da}
+/* Build footer (#743) — version of ``ken`` + generation timestamp. */
+.wiki-footer{margin-top:40px;padding-top:12px;border-top:1px solid #d0d7de;
+  font-size:11px;color:#57606a;text-align:right}
+</style></head><body><div class="layout"><nav class="sidebar"><h1>kenboard wiki</h1><ul><li><a href="../index.html">Home</a></li><li style="padding-left:0px"><a href="../bootstrap/index.html">Bootstrap & Organisation</a></li><li style="padding-left:0px"><a href="../cli/index.html">CLI (commandes Nagios)</a></li><li style="padding-left:0px"><a href="../core/index.html">Core (config, connexion, client, nagios)</a></li><li style="padding-left:0px"><a href="index.html" class="current">Services (checks)</a></li><li style="padding-left:0px"><a href="../quality/index.html">Qualité & Gates</a></li><li style="padding-left:0px"><a href="../ci/index.html">CI & Publication</a></li><li style="padding-left:0px"><a href="../doc/index.html">Documentation</a></li><li style="padding-left:0px"><a href="../log/index.html">Journal</a></li><li style="padding-left:12px"><a href="../log/2026-07-04.html">2026-07-04</a></li></ul></nav><main><div class="fullscreen-card"><div class="fullscreen-header"><span class="fullscreen-id">#951</span><span class="fullscreen-status status-review">review</span></div><h2 class="fullscreen-title">HEALTH / Backport des modes de check_mysql_health (lausser)</h2><div class="fullscreen-meta"><div class="task-avatar" style="background:#0a3069">C</div><span class="fs-who">Claude</span><span>Classified 2026-07-04</span><span>by key:f156efe4-abe2-4a76-affc-d07705fb5c4f</span></div><div class="fullscreen-desc"><p>Backport des modes de https://github.com/lausser/check_mysql_health (plugin Nagios Perl de G. Lausser, GPL-2.0) dans check_mysql (architecture cli/core/services, PyMySQL direct ou tunnel SSH).</p>
+<h2>Déjà couvert (équivalents existants)</h2>
+<ul>
+<li>connection-time → <code>latency</code></li>
+<li>uptime → <code>uptime</code></li>
+<li>threads-connected → <code>connections</code></li>
+<li>slow-queries → <code>slowqueries</code></li>
+<li>slave-lag / slave-io-running / slave-sql-running → <code>replication</code></li>
+</ul>
+<h2>Modes à backporter</h2>
+<p>Hitrates / caches :
+- threadcache-hitrate — efficacité du cache de threads
+- querycache-hitrate + querycache-lowmem-prunes — cache de requêtes (MariaDB uniquement : supprimé de MySQL 8.0 → détecter et sortir UNKNOWN proprement)
+- keycache-hitrate — cache de clés MyISAM
+- tablecache-hitrate — cache de tables
+- bufferpool-hitrate + bufferpool-wait-free — buffer pool InnoDB</p>
+<p>Charge / contention :
+- log-waits — attentes sur le log InnoDB
+- table-lock-contention — taux de verrous de tables en attente
+- index-usage — usage des index vs full table scans
+- tmp-disk-tables — tables temporaires créées sur disque
+- long-running-procs — processus dépassant une durée seuil (PROCESSLIST)
+- open-files — descripteurs ouverts vs open_files_limit</p>
+<p>Générique :
+- sql — requête SQL arbitraire, résultat comparé aux seuils warning/critical</p>
+<h2>Hors scope (proposé)</h2>
+<ul>
+<li>cluster-ndb-running (NDB cluster, cas rare)</li>
+<li>encode (utilitaire d'échappement, sans objet en Python)</li>
+</ul>
+<h2>Notes d'implémentation</h2>
+<ul>
+<li>La plupart des modes se réduisent à SHOW GLOBAL STATUS / SHOW GLOBAL VARIABLES + un ratio : mutualiser un service status/variables dans core/services plutôt qu'une requête par commande.</li>
+<li>check_mysql_health calcule les hitrates en delta entre deux exécutions (fichier d'état) ; trancher : ratio depuis le démarrage du serveur (simple, sans état) vs delta persisté — documenter le choix dans le README.</li>
+<li>Suivre les conventions des commandes existantes : sortie Nagios, perfdata, seuils -w/-c, config check_mysql.ini.</li>
+<li>Tests sans serveur MySQL (mock client Protocol, fakes, CliRunner) ; <code>pdm run check</code> vert et cliquet qualité respecté.</li>
+<li>Probablement à découper en plusieurs cartes filles au moment du passage en doing (une par groupe de modes).</li>
+</ul>
+<p>Référence modes : https://omd.consol.de/docs/plugins/check_mysql_health/</p>
+<hr />
+<h2>Résolution</h2>
+<h3>Modifications</h3>
+<p>Approche table-driven plutôt que 14 fichiers copiés-collés : deux services génériques pilotés par des specs (dataclasses figées) + trois services dédiés.</p>
+<ul>
+<li>check_mysql/core/status.py : helpers partagés read_int / sum_counters (lecture stricte des compteurs SHOW, hint optionnel dans l'erreur)</li>
+<li>check_mysql/services/ratio_service.py : RatioSpec + catalogue RATIO_SPECS (8 modes : threadcache, querycache, keycache, tablecache, bufferpool, tablelocks, indexusage, tmpdisktables) + RatioService (pourcentage clampé 0-100, empty_value si dénominateur nul)</li>
+<li>check_mysql/services/counter_service.py : CounterSpec + COUNTER_SPECS (querycacheprunes, bufferpoolwaits, logwaits) + CounterRateService (taux moyen /s depuis le démarrage)</li>
+<li>check_mysql/services/openfiles_service.py : Open_files vs open_files_limit (%)</li>
+<li>check_mysql/services/longrunning_service.py : requêtes actives &gt; 60 s via PROCESSLIST (Sleep/Daemon/Binlog Dump exclus, Time invalide toléré)</li>
+<li>check_mysql/services/sql_service.py : scalaire d'une requête arbitraire</li>
+<li>check_mysql/core/mysql_client.py + core/models.py : méthodes get_processlist() et query_scalar() ajoutées au client et au Protocol</li>
+<li>check_mysql/cli/commands/{ratios,counters}.py : enregistrement en boucle depuis les catalogues ; {openfiles,longrunning,sql}.py : commandes classiques ; <strong>init</strong>.py : câblage</li>
+<li>tests : 5 nouveaux fichiers unitaires + extensions test_mysql_client, test_cli_integration (paramétré sur les catalogues), fixtures status_data.json (compteurs + processlist) et mock client</li>
+<li>README.md (tableau des 14 commandes, § « check_mysql_health Heritage », grants PROCESS), ARCHITECTURE.md</li>
+<li>scripts/quality_metrics.py + doc/code-quality.md : gate vert → snapshot enregistré puis palier 2 (max_func_lines 60→50, test_cov 80→90, min_file_cov 50→75)</li>
+</ul>
+<h3>Comportements obtenus</h3>
+<ul>
+<li>14 nouvelles commandes avec les seuils par défaut de check_mysql_health : threadcache (90:/80:), querycache (90:/80:), querycacheprunes (1/10), keycache (99:/95:), tablecache (99:/95:), bufferpool (99:/95:), bufferpoolwaits (1/10), logwaits (1/10), tablelocks (1/2), indexusage (90:/80:), tmpdisktables (25/50), openfiles (80/95), longrunning (10/20), sql (sans seuil par défaut : plage « ~: », jamais d'alerte — « » alerterait sur les négatifs)</li>
+<li>querycache/querycacheprunes sur MySQL 8.0+ : UNKNOWN propre avec hint « query cache removed in MySQL 8.0 »</li>
+<li>Choix documenté (README) : taux moyens depuis le démarrage du serveur, pas de fichier d'état (diffère volontairement de l'original qui fait du delta entre exécutions)</li>
+<li>sql : <code>--sql "SELECT ..."</code> obligatoire, première colonne de la première ligne, seuils -W/-C optionnels</li>
+<li>longrunning liste les requêtes fautives en long output ; nécessite le grant PROCESS (documenté)</li>
+</ul>
+<h3>Garde-fous</h3>
+<ul>
+<li>pdm run check : VERT de bout en bout (isort, format-check, lint, flake8, pyright strict 0, interrogate 100 %, refurb 0, vulture 0, 183 tests OK, metrics-gate PASS)</li>
+<li>Couverture totale 99,59 % (cliquet ≥ 99,32 respecté), 100 % sur chaque nouveau fichier, min_file_cov 96 %</li>
+<li>metrics-record exécuté puis gate resserré au palier 2 (re-vérifié PASS)</li>
+<li>Smoke test CLI réel : --help liste les 20 commandes, threadcache --help correct, exit 3 UNKNOWN sur config absente</li>
+<li>Hors scope confirmé : cluster-ndb-running, encode</li>
+<li>Note : développement en parallèle avec la tâche #950 dans le même arbre de travail (commandes ping/init, tests e2e) ; les gates ont été passés sur l'état combiné</li>
+</ul></div><div class="wiki-nav"><a href="index.html">← retour à services</a> · <a href="../log/2026-07-04.html">voir log</a></div></div><footer class="wiki-footer">Généré le 2026-07-04 09:22:46 UTC par kenboard 0.2.3</footer></main></div></body></html>

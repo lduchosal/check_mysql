@@ -1,0 +1,94 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>#950 — INIT / Setup guidé : user monitoring (SQL, création, test de connexion) — kenboard wiki</title><style>body{margin:0;font-family:system-ui,sans-serif;color:#222;background:#fff}
+.layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+nav.sidebar{background:#f6f8fa;border-right:1px solid #d0d7de;padding:16px;
+  overflow-y:auto;font-size:13px}
+nav.sidebar h1{font-size:14px;text-transform:uppercase;color:#57606a;margin:0 0 12px}
+nav.sidebar ul{list-style:none;padding:0;margin:0}
+nav.sidebar li{margin:2px 0}
+nav.sidebar a{color:#0969da;text-decoration:none}
+nav.sidebar a:hover{text-decoration:underline}
+nav.sidebar a.current{font-weight:600;color:#1a1a1a}
+main{padding:24px 32px;max-width:900px}
+main h1{margin-top:0}
+main code{background:#f6f8fa;padding:1px 4px;border-radius:3px;font-size:90%}
+main pre{background:#f6f8fa;padding:12px;border-radius:6px;overflow-x:auto}
+main pre code{background:transparent;padding:0}
+main a{color:#0969da}
+/* Task detail (#376f — mirrors templates/modals/task_fullscreen.html) */
+.fullscreen-card{background:#fff;border:1px solid #d0d7de;border-radius:10px;
+  padding:32px 36px;max-width:760px}
+.fullscreen-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.fullscreen-id{font-size:12px;color:#57606a;font-weight:600}
+.fullscreen-status{font-size:11px;text-transform:uppercase;letter-spacing:.5px;
+  color:#57606a;background:#f6f8fa;padding:3px 8px;border-radius:10px}
+.fullscreen-status.status-todo{background:#ddf4ff;color:#0969da}
+.fullscreen-status.status-doing{background:#fff8c5;color:#9a6700}
+.fullscreen-status.status-review{background:#dafbe1;color:#1a7f37}
+.fullscreen-status.status-done{background:#eaeef2;color:#57606a}
+.fullscreen-title{font-size:22px;font-weight:700;margin:0 0 16px;line-height:1.3}
+.fullscreen-meta{display:flex;align-items:center;gap:10px;margin-bottom:20px;
+  font-size:13px;color:#57606a}
+.task-avatar{width:28px;height:28px;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px}
+.fs-who{font-weight:600;color:#222}
+.fullscreen-desc{font-size:14px;line-height:1.7;border-top:1px solid #d0d7de;
+  padding-top:16px}
+.fullscreen-desc h1,.fullscreen-desc h2,.fullscreen-desc h3{margin-top:16px;
+  margin-bottom:8px}
+.fullscreen-desc pre{background:#f6f8fa;border-radius:4px;padding:12px;
+  overflow-x:auto;font-size:12px}
+.fullscreen-desc code{background:#f6f8fa;border-radius:3px;padding:1px 4px;font-size:12px}
+.fullscreen-desc pre code{background:transparent;padding:0}
+.fullscreen-desc ul,.fullscreen-desc ol{padding-left:20px}
+.wiki-nav{margin-top:20px;padding-top:12px;border-top:1px solid #d0d7de;
+  font-size:13px;color:#57606a}
+.wiki-nav a{color:#0969da}
+/* Build footer (#743) — version of ``ken`` + generation timestamp. */
+.wiki-footer{margin-top:40px;padding-top:12px;border-top:1px solid #d0d7de;
+  font-size:11px;color:#57606a;text-align:right}
+</style></head><body><div class="layout"><nav class="sidebar"><h1>kenboard wiki</h1><ul><li><a href="../index.html">Home</a></li><li style="padding-left:0px"><a href="../bootstrap/index.html">Bootstrap & Organisation</a></li><li style="padding-left:0px"><a href="index.html" class="current">CLI (commandes Nagios)</a></li><li style="padding-left:0px"><a href="../core/index.html">Core (config, connexion, client, nagios)</a></li><li style="padding-left:0px"><a href="../services/index.html">Services (checks)</a></li><li style="padding-left:0px"><a href="../quality/index.html">Qualité & Gates</a></li><li style="padding-left:0px"><a href="../ci/index.html">CI & Publication</a></li><li style="padding-left:0px"><a href="../doc/index.html">Documentation</a></li><li style="padding-left:0px"><a href="../log/index.html">Journal</a></li><li style="padding-left:12px"><a href="../log/2026-07-04.html">2026-07-04</a></li></ul></nav><main><div class="fullscreen-card"><div class="fullscreen-header"><span class="fullscreen-id">#950</span><span class="fullscreen-status status-done">done</span></div><h2 class="fullscreen-title">INIT / Setup guidé : user monitoring (SQL, création, test de connexion)</h2><div class="fullscreen-meta"><div class="task-avatar" style="background:#0a3069">C</div><span class="fs-who">Claude</span><span>Classified 2026-07-04</span><span>by key:f156efe4-abe2-4a76-affc-d07705fb5c4f</span></div><div class="fullscreen-desc"><p>Faire de <code>check_mysql init</code> la meilleure expérience de mise en route possible : au-delà de la génération du .ini (#949), guider l'utilisateur jusqu'à un monitoring fonctionnel.</p>
+<h2>Expérience cible (mode interactif par défaut)</h2>
+<ol>
+<li><strong>Questions guidées</strong> avec défauts raisonnables : host/port MySQL, user monitoring, mot de passe (généré aléatoirement par défaut), tunnel SSH oui/non (si oui : bastion host/port/user/clé privée)</li>
+<li><strong>Écriture du check_mysql.ini</strong> (mode 600, refus d'écrasement sans --force) — section [ssh] active si choisie, sinon commentée</li>
+<li><strong>Affichage du SQL</strong> de création du user monitoring (CREATE USER IF NOT EXISTS + GRANT USAGE, REPLICATION CLIENT) — copiable tel quel</li>
+<li><strong>Proposition de créer le user maintenant</strong> : demande des credentials admin (root, mot de passe masqué), connexion au serveur (en passant par le tunnel SSH si configuré !), exécution des statements (mot de passe passé en paramètre, identifiants échappés)</li>
+<li><strong>Proposition de tester la connexion monitoring</strong> : SELECT 1 chronométré + uptime, résultat affiché</li>
+<li><strong>Récapitulatif</strong> : fichier créé, user créé ou SQL à exécuter manuellement, prochaine étape (<code>check_mysql uptime</code>)</li>
+</ol>
+<p>Un échec d'étape (création user, test) est signalé clairement mais n'interrompt pas le flux ; exit 1 si au moins une étape a échoué.</p>
+<h2>Mode non interactif</h2>
+<p><code>check_mysql init --yes</code> : comportement scriptable — template par défaut écrit tel quel + SQL affiché, pas de prompt, pas de connexion.</p>
+<h2>Garde-fous attendus</h2>
+<ul>
+<li>Nouveau module core/provisioning.py (statements + exécution) testé unitairement (échappement des quotes, commit, fermeture connexion/tunnel)</li>
+<li>Tests d'intégration CliRunner : flux interactif complet (input simulé), variante SSH, création du user (connecteur mocké), test de connexion (client mocké), --yes, refus d'écrasement</li>
+<li>max_func_lines ≤ 60 (helpers découpés), pdm run check vert, cliquet couverture respecté</li>
+<li>README mis à jour (setup guidé)</li>
+</ul>
+<hr />
+<h2>Résolution</h2>
+<h3>Modifications</h3>
+<ul>
+<li>check_mysql/core/provisioning.py (nouveau) : monitoring_user_statements (CREATE USER IF NOT EXISTS + GRANT USAGE, REPLICATION CLIENT — mot de passe en paramètre %s, identifiants échappés ''), monitoring_user_sql (bloc copiable), create_monitoring_user (exécution + commit, connexion/tunnel toujours libérés via finally)</li>
+<li>check_mysql/core/config.py : SSH_COMMENTED_SECTION extraite (source unique pour le template et le rendu), write_config(path, content, force) factorisé (mode 600), render_config(mysql, ssh) — section [ssh] active si tunnel choisi, commentée sinon</li>
+<li>check_mysql/cli/commands/init.py : réécrit en setup guidé — _prompt_settings (défauts : localhost/3306/monitoring, mot de passe secrets.token_urlsafe proposé, bastion optionnel), _create_user (credentials admin, mot de passe masqué, création via le tunnel si configuré, erreurs signalées sans crash), _test_connection (SELECT 1 chronométré + uptime), récapitulatif ; exit 1 si une étape a échoué ; <code>--yes</code> = ancien comportement scriptable (template + SQL, zéro prompt)</li>
+<li>tests/unit/test_provisioning.py (nouveau) : 6 tests (ordre et forme des statements, échappement des quotes user/host/password, exécution+commit+libération, libération sur échec)</li>
+<li>tests/unit/test_config.py : 3 tests render_config (round-trip direct et SSH via load_config/get_ssh_config, champs optionnels)</li>
+<li>tests/integration/test_cli_integration.py : TestInitYes (4 tests) + TestInitGuided (5 tests : défauts, variante SSH, création du user via connecteur mocké — credentials admin et binding du mot de passe vérifiés —, test de connexion, échec de création → exit 1)</li>
+<li>README.md : quick start, tableau des commandes et section Configuration réécrits pour le setup guidé</li>
+</ul>
+<h3>Comportements obtenus</h3>
+<ul>
+<li><code>check_mysql init</code> guide de zéro à un monitoring opérationnel : questions avec défauts, .ini écrit (mode 600, [ssh] actif ou commenté), SQL affiché copiable, création du user monitoring sur le serveur (à travers le tunnel SSH le cas échéant), test de connexion (latence + uptime), récapitulatif</li>
+<li>Les échecs (création user, test) sont signalés clairement, le flux continue, exit code 1 en fin de parcours</li>
+<li><code>check_mysql init --yes</code> reste scriptable (template par défaut + SQL, aucun prompt, aucune connexion)</li>
+<li>Smoke test réel : flux complet avec variante SSH piped — fichier correct, mode 600, exit 0</li>
+</ul>
+<h3>Garde-fous</h3>
+<ul>
+<li>pdm run check : VERT (isort, format-check, ruff, flake8, pyright strict 0, interrogate 100 %, refurb 0, vulture 0, 101 tests passés, metrics-gate PASS)</li>
+<li>Couverture : 99.4 % (≥ plancher cliquet 99.32), min par fichier 96.0 %, max_func_lines 39</li>
+<li>Snapshot enregistré dans doc/quality-history.csv</li>
+<li>Non commité : en attente de ta review (#949 aussi toujours en review)</li>
+</ul></div><div class="wiki-nav"><a href="index.html">← retour à cli</a> · <a href="../log/2026-07-04.html">voir log</a></div></div><footer class="wiki-footer">Généré le 2026-07-04 09:22:46 UTC par kenboard 0.2.3</footer></main></div></body></html>

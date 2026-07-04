@@ -1,7 +1,7 @@
 ---
 id: 948
 title: "QUICKSTART / Piller check_msdefender pour plugin Nagios MySQL (pymysql + tunnel SSH)"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-07-04T09:38:46
