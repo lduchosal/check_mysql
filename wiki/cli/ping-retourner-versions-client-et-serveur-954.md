@@ -1,7 +1,7 @@
 ---
 id: 954
 title: "PING / Retourner versions client et serveur"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-07-04T11:10:36

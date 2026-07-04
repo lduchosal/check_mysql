@@ -46,7 +46,7 @@ main a{color:#0969da}
 /* Build footer (#743) — version of ``ken`` + generation timestamp. */
 .wiki-footer{margin-top:40px;padding-top:12px;border-top:1px solid #d0d7de;
   font-size:11px;color:#57606a;text-align:right}
-</style></head><body><div class="layout"><nav class="sidebar"><h1>kenboard wiki</h1><ul><li><a href="../index.html">Home</a></li><li style="padding-left:0px"><a href="../bootstrap/index.html">Bootstrap & Organisation</a></li><li style="padding-left:0px"><a href="../cli/index.html">CLI (commandes Nagios)</a></li><li style="padding-left:0px"><a href="../core/index.html">Core (config, connexion, client, nagios)</a></li><li style="padding-left:0px"><a href="index.html" class="current">Services (checks)</a></li><li style="padding-left:0px"><a href="../quality/index.html">Qualité & Gates</a></li><li style="padding-left:0px"><a href="../ci/index.html">CI & Publication</a></li><li style="padding-left:0px"><a href="../doc/index.html">Documentation</a></li><li style="padding-left:0px"><a href="../log/index.html">Journal</a></li><li style="padding-left:12px"><a href="../log/2026-07-04.html">2026-07-04</a></li></ul></nav><main><div class="fullscreen-card"><div class="fullscreen-header"><span class="fullscreen-id">#957</span><span class="fullscreen-status status-doing">doing</span></div><h2 class="fullscreen-title">SEC / Report over-privileged MySQL accounts</h2><div class="fullscreen-meta"><div class="task-avatar" style="background:#0a3069">C</div><span class="fs-who">Claude</span><span>Classified 2026-07-04</span><span>by key:f156efe4-abe2-4a76-affc-d07705fb5c4f</span></div><div class="fullscreen-desc"><h1>SEC / check_mysql : détecter et rapporter les comptes trop puissants</h1>
+</style></head><body><div class="layout"><nav class="sidebar"><h1>kenboard wiki</h1><ul><li><a href="../index.html">Home</a></li><li style="padding-left:0px"><a href="../bootstrap/index.html">Bootstrap & Organisation</a></li><li style="padding-left:0px"><a href="../cli/index.html">CLI (commandes Nagios)</a></li><li style="padding-left:0px"><a href="../core/index.html">Core (config, connexion, client, nagios)</a></li><li style="padding-left:0px"><a href="index.html" class="current">Services (checks)</a></li><li style="padding-left:0px"><a href="../quality/index.html">Qualité & Gates</a></li><li style="padding-left:0px"><a href="../ci/index.html">CI & Publication</a></li><li style="padding-left:0px"><a href="../doc/index.html">Documentation</a></li><li style="padding-left:0px"><a href="../log/index.html">Journal</a></li><li style="padding-left:12px"><a href="../log/2026-07-04.html">2026-07-04</a></li></ul></nav><main><div class="fullscreen-card"><div class="fullscreen-header"><span class="fullscreen-id">#957</span><span class="fullscreen-status status-review">review</span></div><h2 class="fullscreen-title">SEC / Report over-privileged MySQL accounts</h2><div class="fullscreen-meta"><div class="task-avatar" style="background:#0a3069">C</div><span class="fs-who">Claude</span><span>Classified 2026-07-04</span><span>by key:f156efe4-abe2-4a76-affc-d07705fb5c4f</span></div><div class="fullscreen-desc"><h1>SEC / check_mysql : détecter et rapporter les comptes trop puissants</h1>
 <h2>Contexte</h2>
 <p>check_mysql sait vérifier ping, ratios, counters, longrunning, openfiles, sql.
 Il manque un contrôle de sécurité sur les comptes MySQL/MariaDB : des comptes
@@ -78,4 +78,51 @@ au format Nagios (OK / WARNING / CRITICAL + perfdata).</p>
   documenter le GRANT minimal dans le README</li>
 <li>Tests unitaires sans serveur MySQL (mock client Protocol, fixtures), test e2e optionnel</li>
 <li><code>pdm run check</code> vert (pyright strict, interrogate, metrics-gate…)</li>
-</ul></div><div class="wiki-nav"><a href="index.html">← retour à services</a> · <a href="../log/2026-07-04.html">voir log</a></div></div><footer class="wiki-footer">Généré le 2026-07-04 09:23:13 UTC par kenboard 0.2.3</footer></main></div></body></html>
+</ul>
+<hr />
+<h2>Résolution</h2>
+<h3>Modifications</h3>
+<ul>
+<li>check_mysql/services/security_service.py : nouveau SecurityService — audite les lignes mysql.user, value = nb de comptes à risque, détails par compte</li>
+<li>check_mysql/cli/commands/security.py : commande <code>security</code> (défauts W:0, C:5), factory liant la whitelist de l'ini</li>
+<li>check_mysql/cli/commands/<strong>init</strong>.py : enregistrement de la commande</li>
+<li>check_mysql/core/mysql_client.py : get_user_accounts() — SELECT * FROM mysql.user (DictCursor)</li>
+<li>check_mysql/core/models.py : get_user_accounts ajouté au MySQLClientProtocol</li>
+<li>check_mysql/core/config.py : get_security_allowlist() — section [security], option allow lue en raw (pas d'échappement du %)</li>
+<li>check_mysql.ini.example : section [security] commentée documentée</li>
+<li>README.md : ligne <code>security</code> dans le tableau des commandes + GRANT minimal (SELECT ON mysql.user) + exemple [security]</li>
+<li>tests/fixtures/{mock_mysql_client.py,status_data.json} : user_accounts (fixture serveur durci : root local, comptes sys verrouillés, nagios)</li>
+<li>tests/unit/test_security_service.py : 23 tests (détections, exemptions, reporting)</li>
+<li>tests/unit/test_config.py : 4 tests get_security_allowlist</li>
+<li>tests/unit/test_mysql_client.py : 2 tests get_user_accounts</li>
+<li>tests/integration/test_cli_integration.py : TestSecurityCommand (OK/WARNING/CRITICAL/whitelist ini) + <code>security</code> dans --help</li>
+<li>tests/e2e/test_local_server.py : TestSecurityE2E tolérant (0 si grant présent, UNKNOWN sinon)</li>
+<li>scripts/quality_metrics.py + doc/code-quality.md : palier 3 (min_file_cov 75 → 90 %)</li>
+</ul>
+<h3>Comportements obtenus</h3>
+<ul>
+<li><code>check_mysql security</code> : compte les comptes à risque — anonymes, sans mot de passe
+  (plugins d'auth externes unix_socket/PAM/LDAP/GSSAPI exclus, colonnes Password ET
+  authentication_string acceptées → MySQL et MariaDB), host wildcard <code>%</code> (ou vide),
+  root joignable à distance, privilèges dangereux (SUPER, GRANT OPTION, FILE, PROCESS,
+  SHUTDOWN, ou ALL PRIVILEGES si toutes les colonnes *_priv sont à Y) sur un host non local</li>
+<li>Les privilèges des comptes locaux (localhost/127.0.0.1/::1) ne sont pas signalés :
+  root@localhost et debian-sys-maint restent silencieux sans whitelist — une install
+  saine sort OK d'emblée</li>
+<li>Comptes verrouillés (account_locked) et plugin mysql_no_login ignorés (pas de surface d'attaque)</li>
+<li>Whitelist <code>[security] allow = user@host, …</code> (correspondance exacte User/Host, % sans échappement)</li>
+<li>Sortie Nagios : headline <code>N risky accounts out of M audited (catégorie: n, …)</code>,
+  une ligne 'user'@'host' par compte fautif, perfdata <code>security=N</code> ; défauts W:0 C:5</li>
+<li>Écart assumé vs description : perfdata = compteur global (architecture mono-métrique
+  du NagiosPlugin) ; les compteurs par catégorie sont dans la headline/long output</li>
+<li>Grant manquant → UNKNOWN propre : <code>SELECT command denied…</code> (vérifié contre le serveur local)</li>
+</ul>
+<h3>Garde-fous</h3>
+<ul>
+<li>pdm run check vert : isort, format, lint, flake8, pyright strict, interrogate 100 %,
+  refurb, vulture, 216 tests unit/intégration passés, couverture 99,63 %</li>
+<li>metrics-gate PASS puis cliquet : metrics-record enregistré, palier 3 activé
+  (min_file_cov 75 → 90 %, GATE_PALIER 2 → 3, doc/code-quality.md § Palier 3)</li>
+<li>pdm run test-e2e : 25 tests passés contre le serveur local (dont les 2 nouveaux
+  TestSecurityE2E — branche UNKNOWN, le nagios local n'ayant pas SELECT sur mysql.user)</li>
+</ul></div><div class="wiki-nav"><a href="index.html">← retour à services</a> · <a href="../log/2026-07-04.html">voir log</a></div></div><footer class="wiki-footer">Généré le 2026-07-04 09:51:32 UTC par kenboard 0.2.3</footer></main></div></body></html>

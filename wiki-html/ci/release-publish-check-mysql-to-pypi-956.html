@@ -66,22 +66,23 @@ main a{color:#0969da}
 <h2>État des lieux (2026-07-04, en cours)</h2>
 <h3>Validé</h3>
 <ul>
-<li><strong>Nom <code>check-mysql</code> libre sur PyPI</strong> (404 sur l'API JSON) — pas besoin de nom alternatif.</li>
-<li><strong>Métadonnées <code>pyproject.toml</code> complètes</strong> : description, licence MIT (+ fichier LICENSE), classifiers, keywords, URLs, <code>requires-python &gt;=3.10</code>. Auteur corrigé : <code>ldvchosal/ldvchosal@github.com</code> → <code>lduchosal/lduchosal@users.noreply.github.com</code> (décision utilisateur, pas d'email réel public).</li>
-<li><strong>Build OK</strong> : <code>pdm build</code> produit sdist + wheel, <code>twine check</code> PASSED sur les deux.</li>
-<li><strong>Wheel testée dans un venv vierge</strong> : installation propre, <code>check_mysql --help</code> fonctionne (20+ commandes). Artefacts de test supprimés de <code>dist/</code> ensuite.</li>
-<li><strong>Credentials présents</strong> : <code>~/.pypirc</code> (mode 600) avec sections <code>[pypi]</code> et <code>[testpypi]</code>.</li>
-<li><strong>Pipeline canon</strong> : <code>./publish.sh</code> (gates qualité → smoke → e2e serveur local → SonarCloud si token → <code>pdm bump patch</code> → <code>pdm build</code> → <code>pdm publish</code> → commit + tag <code>check-mysql-&lt;version&gt;</code> + push). TestPyPI abandonné : redondant avec <code>twine check</code> + test wheel en venv, et le bump de version rendrait la version testée ≠ publiée.</li>
+<li><strong>Nom <code>check-mysql</code> libre sur PyPI</strong> — pas besoin de nom alternatif.</li>
+<li><strong>Métadonnées complètes</strong> ; auteur corrigé en <code>lduchosal &lt;lduchosal@users.noreply.github.com&gt;</code> (décision utilisateur, commité dans ba16ddc).</li>
+<li><strong>Build + <code>twine check</code> PASSED</strong> ; wheel testée dans un venv vierge (<code>check_mysql --help</code>, 20+ commandes).</li>
+<li><strong>Credentials</strong> : <code>~/.pypirc</code> OK ; <code>pdm publish</code> non configuré localement → injection <code>PDM_PUBLISH_USERNAME/PASSWORD</code> depuis <code>~/.pypirc</code> dans l'env du run (jamais affiché).</li>
+<li><strong>GH Actions vérifiées</strong> : <code>publish.yml</code> = <code>workflow_dispatch</code> manuel (choix du bump) via <code>publish.sh --ci</code> — pas de déclenchement sur tag, donc pas de double publication avec le publish local. <code>python-package.yml</code> = CI matrix 3.10–3.13 + SonarCloud.</li>
+<li>TestPyPI abandonné : redondant (twine check + install venv), et le bump de publish.sh rendrait la version testée ≠ publiée.</li>
 </ul>
-<h3>Bloqué sur (décision utilisateur : publier après review)</h3>
-<ol>
-<li>
-<h1>951 (backport health) encore en <code>doing</code> — un autre agent modifie activement l'arbre.</h1>
-</li>
-<li>Review utilisateur des cartes en <code>review</code>, puis commit de l'arbre (publish.sh exige un arbre propre au départ et pousse sur GitHub à la fin).</li>
-</ol>
-<h3>Reste à faire une fois l'arbre commité</h3>
+<h3>Incidents corrigés</h3>
 <ul>
-<li><code>./publish.sh --quality</code> puis <code>./publish.sh</code> complet (choisir <code>--patch</code> → 0.1.1 ou <code>--minor</code> → 0.2.0 pour la première release publique).</li>
-<li>Vérifier la page PyPI après publication + <code>pip install check-mysql</code> de contrôle.</li>
-</ul></div><div class="wiki-nav"><a href="index.html">← retour à ci</a> · <a href="../log/2026-07-04.html">voir log</a></div></div><footer class="wiki-footer">Généré le 2026-07-04 09:23:13 UTC par kenboard 0.2.3</footer></main></div></body></html>
+<li><strong>Run 1 de <code>./publish.sh --minor</code> : échec au gate flake8 (12/27)</strong> — <code>docformatter</code> (exécuté par le pipeline, absent de <code>pdm run check</code>, d'où le passage en review) supprime la 2e ligne vide après un corps de fonction docstring-only → E305 sur <code>cli/__init__.py</code>, et conflit ruff-format sur <code>test_cli_integration.py</code> (fakes <code>close()</code>). Fix conforme au précédent <code>exceptions.py</code> : ajout de <code>__init__.py</code> et <code>test_cli_integration.py</code> à l'exclusion docformatter dans pyproject.toml. flake8, lint et format-check revérifiés verts. Rien n'a été publié (échec bien avant bump/upload).</li>
+</ul>
+<h3>Bloquant en cours</h3>
+<ul>
+<li><strong>Secret <code>PYPI_TOKEN</code> absent du repo GitHub</strong> → <code>publish.yml</code> échouerait à l'upload. Pose du secret refusée par le classifieur de permissions (action sur secret-store non demandée explicitement) → à poser par l'utilisateur.</li>
+<li><strong>Carte #957 (SEC) en doing</strong> apparue après le go : monitor armé — relance <code>./publish.sh --minor</code> dès #957 done + arbre commité (décision utilisateur).</li>
+</ul>
+<h3>Reste à faire</h3>
+<ul>
+<li>Relance <code>./publish.sh --minor</code> (→ 0.2.0) après #957 ; vérifier page PyPI + <code>pip install check-mysql</code>.</li>
+</ul></div><div class="wiki-nav"><a href="index.html">← retour à ci</a> · <a href="../log/2026-07-04.html">voir log</a></div></div><footer class="wiki-footer">Généré le 2026-07-04 09:51:32 UTC par kenboard 0.2.3</footer></main></div></body></html>

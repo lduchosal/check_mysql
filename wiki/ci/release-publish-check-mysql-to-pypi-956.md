@@ -37,22 +37,25 @@ Rendre le plugin installable via `pip install` depuis PyPI.
 
 ### Validé
 
-- **Nom `check-mysql` libre sur PyPI** (404 sur l'API JSON) — pas besoin de nom alternatif.
-- **Métadonnées `pyproject.toml` complètes** : description, licence MIT (+ fichier LICENSE), classifiers, keywords, URLs, `requires-python >=3.10`. Auteur corrigé : `ldvchosal/ldvchosal@github.com` → `lduchosal/lduchosal@users.noreply.github.com` (décision utilisateur, pas d'email réel public).
-- **Build OK** : `pdm build` produit sdist + wheel, `twine check` PASSED sur les deux.
-- **Wheel testée dans un venv vierge** : installation propre, `check_mysql --help` fonctionne (20+ commandes). Artefacts de test supprimés de `dist/` ensuite.
-- **Credentials présents** : `~/.pypirc` (mode 600) avec sections `[pypi]` et `[testpypi]`.
-- **Pipeline canon** : `./publish.sh` (gates qualité → smoke → e2e serveur local → SonarCloud si token → `pdm bump patch` → `pdm build` → `pdm publish` → commit + tag `check-mysql-<version>` + push). TestPyPI abandonné : redondant avec `twine check` + test wheel en venv, et le bump de version rendrait la version testée ≠ publiée.
+- **Nom `check-mysql` libre sur PyPI** — pas besoin de nom alternatif.
+- **Métadonnées complètes** ; auteur corrigé en `lduchosal <lduchosal@users.noreply.github.com>` (décision utilisateur, commité dans ba16ddc).
+- **Build + `twine check` PASSED** ; wheel testée dans un venv vierge (`check_mysql --help`, 20+ commandes).
+- **Credentials** : `~/.pypirc` OK ; `pdm publish` non configuré localement → injection `PDM_PUBLISH_USERNAME/PASSWORD` depuis `~/.pypirc` dans l'env du run (jamais affiché).
+- **GH Actions vérifiées** : `publish.yml` = `workflow_dispatch` manuel (choix du bump) via `publish.sh --ci` — pas de déclenchement sur tag, donc pas de double publication avec le publish local. `python-package.yml` = CI matrix 3.10–3.13 + SonarCloud.
+- TestPyPI abandonné : redondant (twine check + install venv), et le bump de publish.sh rendrait la version testée ≠ publiée.
 
-### Bloqué sur (décision utilisateur : publier après review)
+### Incidents corrigés
 
-1. #951 (backport health) encore en `doing` — un autre agent modifie activement l'arbre.
-2. Review utilisateur des cartes en `review`, puis commit de l'arbre (publish.sh exige un arbre propre au départ et pousse sur GitHub à la fin).
+- **Run 1 de `./publish.sh --minor` : échec au gate flake8 (12/27)** — `docformatter` (exécuté par le pipeline, absent de `pdm run check`, d'où le passage en review) supprime la 2e ligne vide après un corps de fonction docstring-only → E305 sur `cli/__init__.py`, et conflit ruff-format sur `test_cli_integration.py` (fakes `close()`). Fix conforme au précédent `exceptions.py` : ajout de `__init__.py` et `test_cli_integration.py` à l'exclusion docformatter dans pyproject.toml. flake8, lint et format-check revérifiés verts. Rien n'a été publié (échec bien avant bump/upload).
 
-### Reste à faire une fois l'arbre commité
+### Bloquant en cours
 
-- `./publish.sh --quality` puis `./publish.sh` complet (choisir `--patch` → 0.1.1 ou `--minor` → 0.2.0 pour la première release publique).
-- Vérifier la page PyPI après publication + `pip install check-mysql` de contrôle.
+- **Secret `PYPI_TOKEN` absent du repo GitHub** → `publish.yml` échouerait à l'upload. Pose du secret refusée par le classifieur de permissions (action sur secret-store non demandée explicitement) → à poser par l'utilisateur.
+- **Carte #957 (SEC) en doing** apparue après le go : monitor armé — relance `./publish.sh --minor` dès #957 done + arbre commité (décision utilisateur).
+
+### Reste à faire
+
+- Relance `./publish.sh --minor` (→ 0.2.0) après #957 ; vérifier page PyPI + `pip install check-mysql`.
 ---
 
 [← retour à ci](index.md) · [voir log](../log/2026-07-04.md)

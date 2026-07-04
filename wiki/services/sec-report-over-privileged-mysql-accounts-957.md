@@ -1,10 +1,10 @@
 ---
 id: 957
 title: "SEC / Report over-privileged MySQL accounts"
-status: doing
+status: review
 who: "Claude"
 due_date: 
-classified_at: 2026-07-04T11:22:31
+classified_at: 2026-07-04T11:40:43
 classified_by: "key:f156efe4-abe2-4a76-affc-d07705fb5c4f"
 section: services
 section_title: "Services (checks)"
@@ -49,6 +49,52 @@ au format Nagios (OK / WARNING / CRITICAL + perfdata).
   documenter le GRANT minimal dans le README
 - Tests unitaires sans serveur MySQL (mock client Protocol, fixtures), test e2e optionnel
 - `pdm run check` vert (pyright strict, interrogate, metrics-gate…)
+
+---
+
+## Résolution
+
+### Modifications
+- check_mysql/services/security_service.py : nouveau SecurityService — audite les lignes mysql.user, value = nb de comptes à risque, détails par compte
+- check_mysql/cli/commands/security.py : commande `security` (défauts W:0, C:5), factory liant la whitelist de l'ini
+- check_mysql/cli/commands/__init__.py : enregistrement de la commande
+- check_mysql/core/mysql_client.py : get_user_accounts() — SELECT * FROM mysql.user (DictCursor)
+- check_mysql/core/models.py : get_user_accounts ajouté au MySQLClientProtocol
+- check_mysql/core/config.py : get_security_allowlist() — section [security], option allow lue en raw (pas d'échappement du %)
+- check_mysql.ini.example : section [security] commentée documentée
+- README.md : ligne `security` dans le tableau des commandes + GRANT minimal (SELECT ON mysql.user) + exemple [security]
+- tests/fixtures/{mock_mysql_client.py,status_data.json} : user_accounts (fixture serveur durci : root local, comptes sys verrouillés, nagios)
+- tests/unit/test_security_service.py : 23 tests (détections, exemptions, reporting)
+- tests/unit/test_config.py : 4 tests get_security_allowlist
+- tests/unit/test_mysql_client.py : 2 tests get_user_accounts
+- tests/integration/test_cli_integration.py : TestSecurityCommand (OK/WARNING/CRITICAL/whitelist ini) + `security` dans --help
+- tests/e2e/test_local_server.py : TestSecurityE2E tolérant (0 si grant présent, UNKNOWN sinon)
+- scripts/quality_metrics.py + doc/code-quality.md : palier 3 (min_file_cov 75 → 90 %)
+
+### Comportements obtenus
+- `check_mysql security` : compte les comptes à risque — anonymes, sans mot de passe
+  (plugins d'auth externes unix_socket/PAM/LDAP/GSSAPI exclus, colonnes Password ET
+  authentication_string acceptées → MySQL et MariaDB), host wildcard `%` (ou vide),
+  root joignable à distance, privilèges dangereux (SUPER, GRANT OPTION, FILE, PROCESS,
+  SHUTDOWN, ou ALL PRIVILEGES si toutes les colonnes *_priv sont à Y) sur un host non local
+- Les privilèges des comptes locaux (localhost/127.0.0.1/::1) ne sont pas signalés :
+  root@localhost et debian-sys-maint restent silencieux sans whitelist — une install
+  saine sort OK d'emblée
+- Comptes verrouillés (account_locked) et plugin mysql_no_login ignorés (pas de surface d'attaque)
+- Whitelist `[security] allow = user@host, …` (correspondance exacte User/Host, % sans échappement)
+- Sortie Nagios : headline `N risky accounts out of M audited (catégorie: n, …)`,
+  une ligne 'user'@'host' par compte fautif, perfdata `security=N` ; défauts W:0 C:5
+- Écart assumé vs description : perfdata = compteur global (architecture mono-métrique
+  du NagiosPlugin) ; les compteurs par catégorie sont dans la headline/long output
+- Grant manquant → UNKNOWN propre : `SELECT command denied…` (vérifié contre le serveur local)
+
+### Garde-fous
+- pdm run check vert : isort, format, lint, flake8, pyright strict, interrogate 100 %,
+  refurb, vulture, 216 tests unit/intégration passés, couverture 99,63 %
+- metrics-gate PASS puis cliquet : metrics-record enregistré, palier 3 activé
+  (min_file_cov 75 → 90 %, GATE_PALIER 2 → 3, doc/code-quality.md § Palier 3)
+- pdm run test-e2e : 25 tests passés contre le serveur local (dont les 2 nouveaux
+  TestSecurityE2E — branche UNKNOWN, le nagios local n'ayant pas SELECT sur mysql.user)
 ---
 
 [← retour à services](index.md) · [voir log](../log/2026-07-04.md)
