@@ -50,10 +50,10 @@ BIG_FILE_LINES = 500
 # lduchosal : dès que le gate est vert, enregistrer un snapshot puis
 # resserrer au palier suivant — un gate vert n'est jamais un état stable.
 # On ne détend JAMAIS un seuil sans décision humaine explicite.
-GATE_PALIER = 1
+GATE_PALIER = 2
 GATE_MAX = {
     "max_file_lines": 500,
-    "max_func_lines": 60,
+    "max_func_lines": 50,
     "c901_over_10": 0,
     "vulture": 0,
     "refurb": 0,
@@ -61,8 +61,8 @@ GATE_MAX = {
 }
 GATE_MIN = {
     "docstring_cov": 95.0,
-    "test_cov": 80.0,
-    "min_file_cov": 50.0,
+    "test_cov": 90.0,
+    "min_file_cov": 75.0,
 }
 # Best-ever ratchet: counts may never exceed their lowest recorded value,
 # coverage may not drop more than RATCHET_COV_SLACK below its highest.

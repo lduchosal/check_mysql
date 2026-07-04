@@ -71,6 +71,18 @@ class MySQLClientProtocol(Protocol):
         """Return SHOW REPLICA STATUS as a row mapping, or None when not a replica."""
         ...
 
+    def get_versions(self) -> dict[str, str]:
+        """Return the client (PyMySQL) and server version strings."""
+        ...
+
+    def get_processlist(self) -> list[dict[str, Any]]:
+        """Return SHOW FULL PROCESSLIST as a list of row mappings."""
+        ...
+
+    def query_scalar(self, query: str) -> float:
+        """Run a query and return the first column of its first row as a float."""
+        ...
+
     def ping(self) -> float:
         """Execute SELECT 1 and return the round-trip time in milliseconds."""
         ...

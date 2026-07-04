@@ -88,6 +88,52 @@ class MySQLClient:
             return row
         raise QueryError("Neither SHOW REPLICA STATUS nor SHOW SLAVE STATUS succeeded")
 
+    def get_versions(self) -> dict[str, str]:
+        """
+        Return the client (PyMySQL) and server version strings.
+
+        Raises:
+            QueryError: If SELECT VERSION() returns no row.
+        """
+        connection = self._connection_or_open()
+        query = "SELECT VERSION()"
+        self.logger.sql_query(query)
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            row = cursor.fetchone()
+        if row is None:
+            raise QueryError("SELECT VERSION() returned no row")
+        return {"client": pymysql.__version__, "server": str(row[0])}
+
+    def get_processlist(self) -> list[dict[str, Any]]:
+        """Return SHOW FULL PROCESSLIST as a list of row mappings."""
+        connection = self._connection_or_open()
+        query = "SHOW FULL PROCESSLIST"
+        self.logger.sql_query(query)
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute(query)
+            rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+
+    def query_scalar(self, query: str) -> float:
+        """
+        Run a query and return the first column of its first row as a float.
+
+        Raises:
+            QueryError: If the query returns no row or a non-numeric value.
+        """
+        connection = self._connection_or_open()
+        self.logger.sql_query(query)
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            row = cursor.fetchone()
+        if not row or row[0] is None:
+            raise QueryError(f"Query returned no scalar result: {query}")
+        try:
+            return float(row[0])
+        except (TypeError, ValueError) as exc:
+            raise QueryError(f"Query returned a non-numeric value: {row[0]!r}") from exc
+
     def ping(self) -> float:
         """Execute SELECT 1 and return the round-trip time in milliseconds."""
         connection = self._connection_or_open()

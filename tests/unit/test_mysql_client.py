@@ -155,6 +155,73 @@ class TestReplicaStatus:
             client.get_replica_status()
 
 
+class TestVersions:
+    """Tests for the version query."""
+
+    def test_get_versions(self):
+        """The server version comes from SELECT VERSION()."""
+        client, connection, _ = _client({"SELECT VERSION()": [("8.4.0",)]})
+        versions = client.get_versions()
+        assert versions["server"] == "8.4.0"
+        assert versions["client"] == pymysql.__version__
+        assert connection.executed == ["SELECT VERSION()"]
+
+    def test_no_row_raises(self):
+        """A server returning no row raises QueryError."""
+        client, _, _ = _client({"SELECT VERSION()": []})
+        with pytest.raises(QueryError, match="no row"):
+            client.get_versions()
+
+
+class TestProcesslist:
+    """Tests for the processlist query."""
+
+    def test_returns_dict_rows(self):
+        """The rows come back as plain dictionaries."""
+        rows = [{"Id": 1, "Command": "Query", "Time": 75}]
+        client, connection, _ = _client({"SHOW FULL PROCESSLIST": rows})
+        assert client.get_processlist() == rows
+        assert connection.executed == ["SHOW FULL PROCESSLIST"]
+
+    def test_empty_processlist(self):
+        """No rows yields an empty list."""
+        client, _, _ = _client({"SHOW FULL PROCESSLIST": []})
+        assert client.get_processlist() == []
+
+
+class TestQueryScalar:
+    """Tests for the arbitrary scalar query."""
+
+    def test_returns_the_first_column(self):
+        """The first column of the first row comes back as a float."""
+        client, connection, _ = _client({"SELECT COUNT(*) FROM t": [(5,)]})
+        assert client.query_scalar("SELECT COUNT(*) FROM t") == 5.0
+        assert connection.executed == ["SELECT COUNT(*) FROM t"]
+
+    def test_numeric_string_is_accepted(self):
+        """Text protocols returning strings still yield a float."""
+        client, _, _ = _client({"SELECT v FROM kv": [("42.5",)]})
+        assert client.query_scalar("SELECT v FROM kv") == 42.5
+
+    def test_no_rows_raises(self):
+        """A query returning no row raises QueryError."""
+        client, _, _ = _client({"SELECT 1 WHERE 0": []})
+        with pytest.raises(QueryError, match="no scalar result"):
+            client.query_scalar("SELECT 1 WHERE 0")
+
+    def test_null_value_raises(self):
+        """A NULL scalar raises QueryError."""
+        client, _, _ = _client({"SELECT NULL": [(None,)]})
+        with pytest.raises(QueryError, match="no scalar result"):
+            client.query_scalar("SELECT NULL")
+
+    def test_non_numeric_raises(self):
+        """A non-numeric scalar raises QueryError."""
+        client, _, _ = _client({"SELECT 'abc'": [("abc",)]})
+        with pytest.raises(QueryError, match="non-numeric"):
+            client.query_scalar("SELECT 'abc'")
+
+
 class TestPing:
     """Tests for the latency probe."""
 

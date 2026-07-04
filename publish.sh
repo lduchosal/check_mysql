@@ -58,7 +58,7 @@ done
 if [ "$QUALITY_ONLY" = true ]; then
     STEPS=17
 else
-    STEPS=26
+    STEPS=27
 fi
 STEP=0
 
@@ -191,6 +191,16 @@ fi
 
 print_step "CLI Smoke Test"
 run_command "pdm run smoke" "CLI smoke test"
+
+# End-to-end tests against the real local MySQL server (check_mysql.ini).
+# Publish is blocked when they fail. CI runners have no local server, so
+# CI mode skips them — local (release) publishes always run them.
+print_step "End-to-End Tests (local MySQL server)"
+if [ "$CI_MODE" = true ]; then
+    echo "${YELLOW}WARN: CI mode — no local MySQL server, skipping E2E tests.${NC}"
+else
+    run_command "pdm run test-e2e" "End-to-end tests"
+fi
 
 # Push the current (committed) code to trigger the SonarCloud analysis, then
 # wait for its quality gate before releasing. Gated on SONAR_TOKEN being

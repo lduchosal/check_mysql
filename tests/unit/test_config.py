@@ -7,8 +7,11 @@ from check_mysql.core.config import (
     get_mysql_config,
     get_ssh_config,
     load_config,
+    render_config,
+    write_default_config,
 )
 from check_mysql.core.exceptions import ConfigurationError
+from check_mysql.core.models import MySQLConfig, SSHConfig
 
 _INI = """[mysql]
 host = db.example.com
@@ -105,6 +108,84 @@ class TestGetMySQLConfig:
         mysql = get_mysql_config(config, hostname="override.example.com", port=3310)
         assert mysql.host == "override.example.com"
         assert mysql.port == 3310
+
+
+class TestWriteDefaultConfig:
+    """Tests for write_default_config."""
+
+    def test_creates_the_file_mode_600(self, tmp_path):
+        """The template is written with owner-only permissions."""
+        target = tmp_path / "check_mysql.ini"
+        path = write_default_config(str(target))
+        assert path == target
+        assert target.stat().st_mode & 0o777 == 0o600
+
+    def test_generated_file_is_loadable(self, tmp_path):
+        """The generated file loads: [mysql] defaults, no active [ssh]."""
+        target = tmp_path / "check_mysql.ini"
+        write_default_config(str(target))
+        config = load_config(str(target))
+        mysql = get_mysql_config(config)
+        assert mysql.host == "localhost"
+        assert mysql.port == 3306
+        assert mysql.user == "nagios"
+        assert mysql.timeout == 10
+        assert get_ssh_config(config) is None
+
+    def test_template_documents_the_ssh_tunnel(self, tmp_path):
+        """The commented [ssh] section ships with the template."""
+        target = tmp_path / "check_mysql.ini"
+        content = write_default_config(str(target)).read_text()
+        for needle in ("#[ssh]", "#private_key", "bastion", "#password"):
+            assert needle in content
+
+    def test_refuses_to_overwrite(self, tmp_path):
+        """An existing file is never clobbered without force."""
+        target = tmp_path / "check_mysql.ini"
+        target.write_text("[mysql]\nhost = keep-me\n")
+        with pytest.raises(ConfigurationError, match="already exists"):
+            write_default_config(str(target))
+        assert "keep-me" in target.read_text()
+
+    def test_force_overwrites(self, tmp_path):
+        """With force the existing file is replaced by the template."""
+        target = tmp_path / "check_mysql.ini"
+        target.write_text("[mysql]\nhost = old\n")
+        write_default_config(str(target), force=True)
+        assert "change-me" in target.read_text()
+
+
+class TestRenderConfig:
+    """Tests for render_config."""
+
+    def test_direct_config_round_trips(self, tmp_path):
+        """Rendered direct settings reload identically; [ssh] stays commented."""
+        mysql = MySQLConfig(host="db1", port=3307, user="mon", password="pw", timeout=5)
+        content = render_config(mysql, None)
+        assert "#[ssh]" in content
+
+        config = load_config(_write_config(tmp_path, content))
+        reloaded = get_mysql_config(config)
+        assert reloaded == mysql
+        assert get_ssh_config(config) is None
+
+    def test_ssh_config_round_trips(self, tmp_path):
+        """Rendered tunnel settings reload as an active [ssh] section."""
+        mysql = MySQLConfig(host="10.0.0.12", user="mon", password="pw")
+        ssh = SSHConfig(host="bastion", port=2222, user="tunnel", private_key="/k")
+        config = load_config(_write_config(tmp_path, render_config(mysql, ssh)))
+
+        reloaded = get_ssh_config(config)
+        assert reloaded == ssh
+
+    def test_database_and_ssh_password_lines_when_set(self):
+        """Optional fields only appear when set."""
+        mysql = MySQLConfig(database="appdb")
+        ssh = SSHConfig(host="bastion", user="tunnel", password="pw")
+        content = render_config(mysql, ssh)
+        assert "database = appdb" in content
+        assert "password = pw" in content
+        assert "private_key" not in content
 
 
 class TestGetSSHConfig:

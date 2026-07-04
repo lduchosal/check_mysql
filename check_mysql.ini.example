@@ -6,7 +6,7 @@
 [mysql]
 host = db.example.com
 port = 3306
-user = monitoring
+user = nagios
 password = secret
 # Optional default schema:
 #database = mydb
@@ -21,7 +21,7 @@ timeout = 10
 #[ssh]
 #host = bastion.example.com
 #port = 22
-#user = monitoring
+#user = nagios
 # Authenticate with a private key (recommended) or a password:
 #private_key = ~/.ssh/id_ed25519
 #password = only-if-no-key

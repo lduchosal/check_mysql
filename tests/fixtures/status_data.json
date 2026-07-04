@@ -5,13 +5,80 @@
     "Slow_queries": "12",
     "Questions": "123456",
     "Bytes_received": "987654",
-    "Bytes_sent": "456789"
+    "Bytes_sent": "456789",
+    "Threads_created": "42",
+    "Connections": "8400",
+    "Qcache_hits": "9000",
+    "Com_select": "1000",
+    "Qcache_lowmem_prunes": "86400",
+    "Key_reads": "50",
+    "Key_read_requests": "10000",
+    "Open_tables": "496",
+    "Opened_tables": "500",
+    "Innodb_buffer_pool_reads": "100",
+    "Innodb_buffer_pool_read_requests": "100000",
+    "Innodb_buffer_pool_wait_free": "0",
+    "Innodb_log_waits": "0",
+    "Table_locks_waited": "10",
+    "Table_locks_immediate": "990",
+    "Handler_read_first": "1000",
+    "Handler_read_key": "50000",
+    "Handler_read_next": "40000",
+    "Handler_read_prev": "2000",
+    "Handler_read_rnd": "3000",
+    "Handler_read_rnd_next": "4000",
+    "Created_tmp_disk_tables": "25",
+    "Created_tmp_tables": "100",
+    "Open_files": "12"
   },
   "global_variables": {
     "max_connections": "151",
     "version": "8.4.0",
-    "version_comment": "MySQL Community Server"
+    "version_comment": "MySQL Community Server",
+    "open_files_limit": "1024"
   },
+  "processlist": [
+    {
+      "Id": 1,
+      "User": "monitoring",
+      "Host": "localhost",
+      "db": null,
+      "Command": "Query",
+      "Time": 0,
+      "State": "starting",
+      "Info": "SHOW FULL PROCESSLIST"
+    },
+    {
+      "Id": 7,
+      "User": "app",
+      "Host": "10.0.0.9:5100",
+      "db": "shop",
+      "Command": "Query",
+      "Time": 75,
+      "State": "Sending data",
+      "Info": "SELECT * FROM orders"
+    },
+    {
+      "Id": 9,
+      "User": "app",
+      "Host": "10.0.0.9:5101",
+      "db": "shop",
+      "Command": "Sleep",
+      "Time": 4000,
+      "State": "",
+      "Info": null
+    },
+    {
+      "Id": 11,
+      "User": "event_scheduler",
+      "Host": "localhost",
+      "db": null,
+      "Command": "Daemon",
+      "Time": 864000,
+      "State": "Waiting on empty queue",
+      "Info": null
+    }
+  ],
   "replica_status_healthy": {
     "Replica_IO_Running": "Yes",
     "Replica_SQL_Running": "Yes",

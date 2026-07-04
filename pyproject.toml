@@ -6,7 +6,7 @@ build-backend = "pdm.backend"
 name = "check-mysql"
 dynamic = ["version"]
 authors = [
-    {name = "ldvchosal", email = "ldvchosal@github.com"},
+    {name = "lduchosal", email = "lduchosal@users.noreply.github.com"},
 ]
 description = "A Nagios plugin for monitoring MySQL servers, directly or through an SSH tunnel"
 readme = "README.md"
@@ -57,7 +57,11 @@ testpaths = ["tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
-addopts = "-v"
+# Kept in sync with pytest.ini (which takes precedence when both exist).
+addopts = '-v -m "not e2e"'
+markers = [
+    "e2e: end-to-end tests against the local MySQL server (check_mysql.ini)",
+]
 
 [tool.coverage.run]
 # Entry stubs have no testable logic; keeping them out preserves the
@@ -103,7 +107,10 @@ version = {source = "file", path = "check_mysql/__init__.py"}
 format = "ruff format"
 typecheck = "pyright check_mysql/"
 build = "python -m build"
-publish = "python -m twine upload dist/* --verbose"
+# E2E against the local MySQL server gate the upload: publish is blocked
+# when they fail.
+publish = {composite = ["test-e2e", "publish-upload"]}
+publish-upload = "python -m twine upload dist/* --verbose"
 install = "pdm install"
 install-dev = "pdm install -G dev"
 smoke = "check_mysql --help"
@@ -113,6 +120,7 @@ test-quick = "python -m pytest tests/ --tb=no -q"
 test-ci = "python -m pytest tests/ -v --cov=check_mysql --cov-report=term-missing --cov-report=xml"
 test-unit = "python -m pytest tests/unit/ -v"
 test-integration = "python -m pytest tests/integration/ -v"
+test-e2e = "python -m pytest tests/e2e/ -v -m e2e"
 test-cov = "python -m pytest tests/ -v --cov=check_mysql --cov-report=html --cov-report=xml --cov-report=term-missing"
 lint = "ruff check check_mysql/ tests/"
 lint-fix = "ruff check --fix check_mysql/ tests/"

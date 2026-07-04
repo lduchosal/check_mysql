@@ -27,8 +27,8 @@ def run_check(
     verbose: int,
     hostname: Optional[str],
     port: Optional[int],
-    warning: str,
-    critical: str,
+    warning: Optional[str],
+    critical: Optional[str],
 ) -> None:
     """
     Run a check command end to end and exit with the Nagios code.

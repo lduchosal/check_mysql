@@ -60,6 +60,24 @@ mesure de couverture via `[tool.coverage.run] omit`).
 Cibles de resserrage envisagées : `max_func_lines` → 50, `test_cov` → 90 %+,
 `min_file_cov` → 75 %+.
 
+### Palier 2 (2026-07-04, backport check_mysql_health)
+
+Gate vert au palier 1 après le backport des checks check_mysql_health
+(task #951) : resserrage de `max_func_lines` 60 → 50, `test_cov` 80 → 90 %,
+`min_file_cov` 50 → 75 % (mesuré : 40 lignes / 99,59 % / 96 %).
+Prochaines cibles : `min_file_cov` → 90 %+, `loc` par fichier à surveiller.
+
+## Tests end-to-end (serveur local)
+
+`tests/e2e/` pilote le **binaire installé** (`.venv/bin/check_mysql`) en
+sous-process contre le serveur MySQL local configuré dans `check_mysql.ini`
+(gitignoré — `check_mysql init` pour le créer) : vraie connexion PyMySQL,
+vrai SQL, vrais codes de sortie Nagios. La suite porte le marker `e2e` et
+est **exclue du run pytest par défaut** (`-m "not e2e"` dans pytest.ini) ;
+`pdm run test-e2e` l'exécute, et elle **bloque la publication** : étape
+dédiée de `publish.sh` (sautée en mode `--ci`, les runners GitHub n'ayant
+ni serveur ni ini) et prérequis du script composite `pdm run publish`.
+
 ## SonarCloud
 
 `sonar-project.properties` (clé `lduchosal_check_mysql`, org `lduchosal`)

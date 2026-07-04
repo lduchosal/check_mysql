@@ -26,7 +26,9 @@ SSH (sshtunnel). Architecture en trois couches, pillée de check_msdefender :
 check_mysql/
 ├── cli/         # click group, décorateurs communs, handlers.run_check,
 │   └── commands/  # une commande par check (uptime, connections,
-│                  # replication, slowqueries, latency)
+│                  # replication, slowqueries, latency) + les checks
+│                  # backportés de check_mysql_health : ratios.py et
+│                  # counters.py (table-driven), openfiles, longrunning, sql
 ├── core/        # config (.ini + overrides CLI), connection (direct/tunnel),
 │                # mysql_client (requêtes SHOW/SELECT), nagios (runner,
 │                # plages, perfdata), models (dataclasses/TypedDict/Protocol),

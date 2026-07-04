@@ -11,6 +11,9 @@ Architecture cli/core/services pillée de check_msdefender — voir README.md.
 - Gate bloquant + cliquet best-ever : `scripts/quality_metrics.py` vs `doc/quality-history.csv`
   (procédure des paliers dans `doc/code-quality.md`). Ne JAMAIS détendre un seuil.
 - Les tests tournent sans serveur MySQL (mock client Protocol, fakes, CliRunner).
+  Exception : `tests/e2e/` (marker `e2e`, exclu du run par défaut) pilote le binaire
+  installé contre le serveur local de `check_mysql.ini` — `pdm run test-e2e`, exécuté
+  par `publish.sh` (sauf `--ci`) et prérequis de `pdm run publish`.
 - Gate vert → `pdm run metrics-record` puis resserrer un seuil.
 
 Les tâches de ce projet sont gérées sur Kenboard (https://www.kenboard.2113.ch) via le CLI `ken`.
