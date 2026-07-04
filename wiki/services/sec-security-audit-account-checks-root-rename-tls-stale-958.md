@@ -1,7 +1,7 @@
 ---
 id: 958
 title: "SEC / Security audit - account checks (root rename, TLS, stale)"
-status: todo
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-07-04T12:20:03
@@ -40,6 +40,14 @@ tracé `-vvv`, testé, documenté (README table + CIS 4.x).
 
 **Reste** : root non renommé (CIS 4.5, tension avec « install saine = OK »), comptes par
 défaut inutilisés, TLS par compte (`ssl_type`). Carte maintenue en todo.
+
+---
+
+## Clôture (0.2.5)
+
+Fermé : critère « password expired » livré (v2). Root-rename (CIS 4.5) et TLS par
+compte descopés — feraient warner toute install standard (contradiction avec le
+principe « install saine = OK »). À rouvrir via une carte opt-in « strict CIS » si besoin.
 ---
 
 [← retour à services](index.md) · [voir log](../log/2026-07-04.md)

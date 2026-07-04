@@ -1,7 +1,7 @@
 ---
 id: 959
 title: "SEC / Security audit - database checks (test db, mysql schema)"
-status: todo
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-07-04T12:20:04
@@ -29,6 +29,15 @@ section_title: "Services (checks)"
   variables déjà disponibles via `get_global_variables()`) → étendre MySQLClientProtocol + mock
 - GRANT minimal à documenter (SELECT sur mysql.db) — rester en lecture seule
 - README § Security Audit Semantics + check_mysql.ini.example à jour
+
+---
+
+## Clôture (0.2.5)
+
+Fermé sans implémentation pour stabiliser la version. Les checks serveur (base `test`,
+grants sur le schéma `mysql`, `validate_password`, `local_infile`, `secure_file_priv`)
+nécessitent de nouvelles requêtes client + une sémantique « server-wide » distincte de
+l'audit par compte. À rouvrir en carte dédiée si le besoin se confirme.
 ---
 
 [← retour à services](index.md) · [voir log](../log/2026-07-04.md)

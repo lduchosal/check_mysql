@@ -1,7 +1,7 @@
 ---
 id: 960
 title: "SEC / Security audit - password checks (weak, legacy, policy)"
-status: todo
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-07-04T12:20:05
@@ -44,6 +44,14 @@ Tracé `-vvv`, testé (hash de « password » = *2470C0…), documenté.
 
 **Reste** : plugins legacy (CIS 4.7, bruyant sur MariaDB → opt-in), `validate_password`
 absent, expiration par défaut. Wordlist configurable `[security] wordlist`. Carte en todo.
+
+---
+
+## Clôture (0.2.5)
+
+Fermé : critère « weak password » (wordlist offline vs hash mysql_native_password) livré
+(v2). Plugins legacy (bruit sur MariaDB), `validate_password` (relève de #959) et policy
+d'expiration descopés.
 ---
 
 [← retour à services](index.md) · [voir log](../log/2026-07-04.md)

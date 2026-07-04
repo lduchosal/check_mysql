@@ -1,7 +1,7 @@
 ---
 id: 963
 title: "SEC / Security audit - privilege separation check"
-status: todo
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-07-04T12:20:06
@@ -41,6 +41,14 @@ section_title: "Services (checks)"
 
 **Reste** : comptes applicatifs avec DDL global (heuristique), comptes cumulards admin+app,
 cascade WITH GRANT OPTION. Dépend de l'inventaire admin (#962). Carte en todo.
+
+---
+
+## Clôture (0.2.5)
+
+Fermé : GRANT OPTION hors admins déjà couvert via `[security] admins` (v2). Heuristiques
+restantes (DDL sur comptes applicatifs, comptes cumulards admin+app) descopées — trop de
+faux positifs pour un plugin de monitoring.
 ---
 
 [← retour à services](index.md) · [voir log](../log/2026-07-04.md)

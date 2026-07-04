@@ -1,7 +1,7 @@
 ---
 id: 962
 title: "SEC / Security audit - full all-privileges inventory"
-status: todo
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-07-04T12:20:06
@@ -47,6 +47,14 @@ signalé (portion « unexpected admin » distante de la carte).
 **Reste** : inventaire exhaustif incluant les comptes locaux (approche CIS non-admin,
 bruyante par défaut → opt-in), privilèges dynamiques MySQL 8 (`mysql.global_grants` :
 SYSTEM_USER, ROLE_ADMIN…) et rôles. Carte en todo.
+
+---
+
+## Clôture (0.2.5)
+
+Fermé : option `[security] admins` + détection « unexpected admin » à distance livrées
+(v2). Inventaire local exhaustif (bruit) et privilèges dynamiques MySQL 8
+(`mysql.global_grants`) descopés.
 ---
 
 [← retour à services](index.md) · [voir log](../log/2026-07-04.md)
