@@ -33,9 +33,9 @@ def run_check(
     """
     Run a check command end to end and exit with the Nagios code.
 
-    Loads the configuration, opens the connection (direct or through the SSH
-    tunnel), executes the service through the Nagios runner and exits with
-    codes 0/1/2, or 3 (UNKNOWN) on any setup failure.
+    Loads the configuration, opens the connection (direct or through the SSH tunnel), executes the
+    service through the Nagios runner and exits with codes 0/1/2, or 3 (UNKNOWN) on any setup
+    failure.
     """
     try:
         cfg = load_config(config)

@@ -67,6 +67,13 @@ Gate vert au palier 1 après le backport des checks check_mysql_health
 `min_file_cov` 50 → 75 % (mesuré : 40 lignes / 99,59 % / 96 %).
 Prochaines cibles : `min_file_cov` → 90 %+, `loc` par fichier à surveiller.
 
+### Palier 3 (2026-07-04, commande security)
+
+Gate vert au palier 2 après l'audit des comptes (task #957) : resserrage de
+`min_file_cov` 75 → 90 % (mesuré : 96 %, test_cov 99,63 %).
+Prochaines cibles : `test_cov` → 95 % en plancher absolu (le cliquet le tient
+déjà plus haut), `max_func_lines` → 40.
+
 ## Tests end-to-end (serveur local)
 
 `tests/e2e/` pilote le **binaire installé** (`.venv/bin/check_mysql`) en

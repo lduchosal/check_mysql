@@ -10,10 +10,11 @@ from check_mysql.core.models import MySQLClientProtocol, ServiceResult
 
 
 class ReplicationService:
-    """Service checking replication lag and replication thread state.
+    """
+    Service checking replication lag and replication thread state.
 
-    Handles both the modern (``Replica_*`` / ``Source_*``, MySQL >= 8.0.22)
-    and the legacy (``Slave_*`` / ``Master_*``) column names.
+    Handles both the modern (``Replica_*`` / ``Source_*``, MySQL >= 8.0.22) and the legacy
+    (``Slave_*`` / ``Master_*``) column names.
     """
 
     def __init__(self, client: MySQLClientProtocol, verbose_level: int = 0) -> None:

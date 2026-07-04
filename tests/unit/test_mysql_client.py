@@ -88,7 +88,11 @@ def _client(rows_by_query):
 
 
 class TestFetchPairs:
-    """Tests for the SHOW ... name/value queries."""
+    """
+    Tests for the SHOW ...
+
+    name/value queries.
+    """
 
     def test_get_global_status(self):
         """Tuple rows become a name/value mapping."""
@@ -187,6 +191,22 @@ class TestProcesslist:
         """No rows yields an empty list."""
         client, _, _ = _client({"SHOW FULL PROCESSLIST": []})
         assert client.get_processlist() == []
+
+
+class TestUserAccounts:
+    """Tests for the mysql.user query."""
+
+    def test_returns_dict_rows(self):
+        """The rows come back as plain dictionaries."""
+        rows = [{"User": "root", "Host": "localhost", "Super_priv": "Y"}]
+        client, connection, _ = _client({"SELECT * FROM mysql.user": rows})
+        assert client.get_user_accounts() == rows
+        assert connection.executed == ["SELECT * FROM mysql.user"]
+
+    def test_empty_account_table(self):
+        """No rows yields an empty list."""
+        client, _, _ = _client({"SELECT * FROM mysql.user": []})
+        assert client.get_user_accounts() == []
 
 
 class TestQueryScalar:

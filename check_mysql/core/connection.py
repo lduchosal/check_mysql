@@ -13,11 +13,12 @@ from check_mysql.core.models import MySQLConfig, SSHConfig
 
 
 class MySQLConnector:
-    """Open PyMySQL connections, directly or through an SSH tunnel.
+    """
+    Open PyMySQL connections, directly or through an SSH tunnel.
 
-    When an SSH configuration is provided, an SSH tunnel is established to the
-    bastion first and MySQL is reached through the tunnel's local endpoint;
-    otherwise PyMySQL connects straight to the configured host and port.
+    When an SSH configuration is provided, an SSH tunnel is established to the bastion first and
+    MySQL is reached through the tunnel's local endpoint; otherwise PyMySQL connects straight to the
+    configured host and port.
     """
 
     def __init__(

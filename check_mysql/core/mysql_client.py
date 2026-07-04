@@ -14,11 +14,12 @@ from check_mysql.core.logging_config import get_verbose_logger
 
 
 class MySQLClient:
-    """Thin client over PyMySQL for the queries used by the services.
+    """
+    Thin client over PyMySQL for the queries used by the services.
 
-    The connection (and the SSH tunnel, when configured) opens lazily on the
-    first query and is released by :meth:`close` — use the client as a context
-    manager so failures still clean up the tunnel.
+    The connection (and the SSH tunnel, when configured) opens lazily on the first query and is
+    released by :meth:`close` — use the client as a context manager so failures still clean up the
+    tunnel.
     """
 
     def __init__(self, connector: MySQLConnector, verbose_level: int = 0) -> None:
@@ -109,6 +110,16 @@ class MySQLClient:
         """Return SHOW FULL PROCESSLIST as a list of row mappings."""
         connection = self._connection_or_open()
         query = "SHOW FULL PROCESSLIST"
+        self.logger.sql_query(query)
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute(query)
+            rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+
+    def get_user_accounts(self) -> list[dict[str, Any]]:
+        """Return the mysql.user rows (one per account) as a list of row mappings."""
+        connection = self._connection_or_open()
+        query = "SELECT * FROM mysql.user"
         self.logger.sql_query(query)
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
             cursor.execute(query)

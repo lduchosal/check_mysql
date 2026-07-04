@@ -12,10 +12,10 @@ def load_fixture_data() -> dict[str, Any]:
 
 
 class MockMySQLClient:
-    """Mock MySQL client backed by fixture data.
+    """
+    Mock MySQL client backed by fixture data.
 
-    Satisfies MySQLClientProtocol without any server; every dataset can be
-    overridden per test.
+    Satisfies MySQLClientProtocol without any server; every dataset can be overridden per test.
     """
 
     def __init__(
@@ -26,6 +26,7 @@ class MockMySQLClient:
         ping_ms: float = 3.42,
         versions: Optional[dict[str, str]] = None,
         processlist: Optional[list[dict[str, Any]]] = None,
+        user_accounts: Optional[list[dict[str, Any]]] = None,
         scalar: float = 42.0,
     ):
         """Initialize with fixture data, defaulting to status_data.json."""
@@ -45,6 +46,9 @@ class MockMySQLClient:
         )
         self.processlist: list[dict[str, Any]] = (
             processlist if processlist is not None else data["processlist"]
+        )
+        self.user_accounts: list[dict[str, Any]] = (
+            user_accounts if user_accounts is not None else data["user_accounts"]
         )
         self.scalar = scalar
         self.last_scalar_query: Optional[str] = None
@@ -68,6 +72,10 @@ class MockMySQLClient:
     def get_processlist(self) -> list[dict[str, Any]]:
         """Return the fixture processlist."""
         return self.processlist
+
+    def get_user_accounts(self) -> list[dict[str, Any]]:
+        """Return the fixture mysql.user rows."""
+        return self.user_accounts
 
     def query_scalar(self, query: str) -> float:
         """Record the query and return the fixture scalar."""

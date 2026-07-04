@@ -9,10 +9,11 @@ from check_mysql.core.models import CheckServiceProtocol, ServiceResult
 
 
 class MySQLSummary(nagiosplugin.Summary):
-    """Summary rendering the service detail lines.
+    """
+    Summary rendering the service detail lines.
 
-    The first detail line becomes the status headline; the remaining lines are
-    emitted as Nagios long output.
+    The first detail line becomes the status headline; the remaining lines are emitted as Nagios
+    long output.
     """
 
     def __init__(self, details: Optional[List[str]]) -> None:
@@ -70,10 +71,11 @@ class NagiosPlugin:
         critical: Optional[str] = None,
         verbose: int = 0,
     ) -> int:
-        """Execute the check and return the Nagios exit code.
+        """
+        Execute the check and return the Nagios exit code.
 
-        Thresholds are standard Nagios range specifications, e.g. ``95`` (alert
-        above 95), ``300:`` (alert below 300) or ``10:20`` (alert outside).
+        Thresholds are standard Nagios range specifications, e.g. ``95`` (alert above 95), ``300:``
+        (alert below 300) or ``10:20`` (alert outside).
         """
         try:
             result: ServiceResult = self.service.get_result()

@@ -79,6 +79,60 @@
       "Info": null
     }
   ],
+  "user_accounts": [
+    {
+      "User": "root",
+      "Host": "localhost",
+      "Select_priv": "Y",
+      "Insert_priv": "Y",
+      "Update_priv": "Y",
+      "Delete_priv": "Y",
+      "Super_priv": "Y",
+      "Grant_priv": "Y",
+      "File_priv": "Y",
+      "Process_priv": "Y",
+      "Shutdown_priv": "Y",
+      "plugin": "caching_sha2_password",
+      "authentication_string": "$A$005$abcdefghijklmnopqrstuvwxyz012345",
+      "account_locked": "N"
+    },
+    {
+      "User": "mysql.sys",
+      "Host": "localhost",
+      "Select_priv": "N",
+      "Super_priv": "N",
+      "plugin": "caching_sha2_password",
+      "authentication_string": "$A$005$THISISACOMBINATIONOFINVALIDSALTAN",
+      "account_locked": "Y"
+    },
+    {
+      "User": "mysql.session",
+      "Host": "localhost",
+      "Select_priv": "N",
+      "Super_priv": "Y",
+      "plugin": "caching_sha2_password",
+      "authentication_string": "$A$005$THISISACOMBINATIONOFINVALIDSALTAN",
+      "account_locked": "Y"
+    },
+    {
+      "User": "mysql.infoschema",
+      "Host": "localhost",
+      "Select_priv": "Y",
+      "Super_priv": "N",
+      "plugin": "caching_sha2_password",
+      "authentication_string": "$A$005$THISISACOMBINATIONOFINVALIDSALTAN",
+      "account_locked": "Y"
+    },
+    {
+      "User": "nagios",
+      "Host": "localhost",
+      "Select_priv": "N",
+      "Super_priv": "N",
+      "plugin": "caching_sha2_password",
+      "authentication_string": "$A$005$abcdefghijklmnopqrstuvwxyz543210",
+      "account_locked": "N"
+    }
+  ],
   "replica_status_healthy": {
     "Replica_IO_Running": "Yes",
     "Replica_SQL_Running": "Yes",

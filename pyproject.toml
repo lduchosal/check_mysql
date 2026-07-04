@@ -130,8 +130,12 @@ absolufy = {shell = "find check_mysql -name '*.py' -exec absolufy-imports {} +"}
 flake8 = "flake8 check_mysql/"
 # exceptions.py is excluded: docformatter 1.7.8 collapses the blank line after
 # the module docstring, conflicting with ruff format (wants 2) and flake8 E302.
+# __init__.py likewise: it collapses the two blank lines after a docstring-only
+# function body (cli/__init__.py main), tripping flake8 E305.
+# test_cli_integration.py likewise: docstring-only close() fakes, where it
+# strips the blank line ruff format requires before the following statement.
 # Exclude matches on basename in in-place mode (the full path is ignored there).
-docformatter = {shell = "docformatter check_mysql/ tests/ --exclude exceptions.py || [ $? -eq 3 ]"}
+docformatter = {shell = "docformatter check_mysql/ tests/ --exclude exceptions.py __init__.py test_cli_integration.py || [ $? -eq 3 ]"}
 interrogate = "interrogate -v --omit-covered-files check_mysql/"
 vulture = "vulture check_mysql/ tests/"
 refurb = "refurb check_mysql/ tests/"

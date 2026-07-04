@@ -13,7 +13,8 @@ _QCACHE_HINT = " (query cache removed in MySQL 8.0)"
 
 @dataclass(frozen=True)
 class RatioSpec:
-    """Percentage computed from SHOW GLOBAL STATUS counter sets.
+    """
+    Percentage computed from SHOW GLOBAL STATUS counter sets.
 
     With ``invert`` the reported value is ``100 - numerator/denominator``
     (a hitrate derived from a miss counter), otherwise the direct share.

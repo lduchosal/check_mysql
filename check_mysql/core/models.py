@@ -79,6 +79,10 @@ class MySQLClientProtocol(Protocol):
         """Return SHOW FULL PROCESSLIST as a list of row mappings."""
         ...
 
+    def get_user_accounts(self) -> list[dict[str, Any]]:
+        """Return the mysql.user rows (one per account) as a list of row mappings."""
+        ...
+
     def query_scalar(self, query: str) -> float:
         """Run a query and return the first column of its first row as a float."""
         ...

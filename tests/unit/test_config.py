@@ -5,6 +5,7 @@ import pytest
 from check_mysql.core.config import (
     _find_config_file,
     get_mysql_config,
+    get_security_allowlist,
     get_ssh_config,
     load_config,
     render_config,
@@ -186,6 +187,34 @@ class TestRenderConfig:
         assert "database = appdb" in content
         assert "password = pw" in content
         assert "private_key" not in content
+
+
+class TestGetSecurityAllowlist:
+    """Tests for get_security_allowlist."""
+
+    def test_no_section_returns_empty_set(self, tmp_path):
+        """Without a [security] section nothing is exempted."""
+        config = load_config(_write_config(tmp_path, _INI))
+        assert not get_security_allowlist(config)
+
+    def test_missing_allow_option_returns_empty_set(self, tmp_path):
+        """An empty [security] section exempts nothing."""
+        config = load_config(_write_config(tmp_path, _INI + "\n[security]\n"))
+        assert not get_security_allowlist(config)
+
+    def test_comma_separated_entries_are_split_and_stripped(self, tmp_path):
+        """Entries split on commas, whitespace trimmed, % unescaped (raw read)."""
+        content = _INI + "\n[security]\nallow = backup@10.0.0.5, dba@% ,\n"
+        config = load_config(_write_config(tmp_path, content))
+        assert get_security_allowlist(config) == frozenset({"backup@10.0.0.5", "dba@%"})
+
+    def test_multiline_entries_are_accepted(self, tmp_path):
+        """Indented continuation lines work like commas."""
+        content = _INI + "\n[security]\nallow = backup@10.0.0.5\n\tdba@localhost\n"
+        config = load_config(_write_config(tmp_path, content))
+        assert get_security_allowlist(config) == frozenset(
+            {"backup@10.0.0.5", "dba@localhost"}
+        )
 
 
 class TestGetSSHConfig:

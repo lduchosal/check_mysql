@@ -86,9 +86,12 @@ class TestStatements:
         assert statements[0][1] is True
         assert "GRANT USAGE, REPLICATION CLIENT ON *.*" in statements[1][0]
         assert statements[1][1] is False
+        assert "GRANT SELECT ON mysql.user" in statements[2][0]
+        assert statements[2][1] is False
 
     def test_parameterized_statement_survives_pymysql_interpolation(self):
-        """PyMySQL renders args with %; the literal '%' host scope must survive.
+        """
+        PyMySQL renders args with %; the literal '%' host scope must survive.
 
         Regression for the live failure: `unsupported format character '''
         (0x27)` — the single '%' of the host scope was read as a format
@@ -99,11 +102,12 @@ class TestStatements:
         rendered = query % ("'pw'",)
         assert rendered == "CREATE USER IF NOT EXISTS 'nagios'@'%' IDENTIFIED BY 'pw'"
 
-    def test_grant_keeps_a_single_percent(self):
-        """The GRANT runs without args: no interpolation, single '%'."""
+    def test_grants_keep_a_single_percent(self):
+        """The GRANTs run without args: no interpolation, single '%'."""
         statements = monitoring_user_statements("nagios")
-        assert "'nagios'@'%'" in statements[1][0]
-        assert "%%" not in statements[1][0]
+        for query, _ in statements[1:]:
+            assert "'nagios'@'%'" in query
+            assert "%%" not in query
 
     def test_quotes_are_escaped(self):
         """Single quotes in user and host scope are doubled."""
@@ -115,12 +119,13 @@ class TestPrintableSql:
     """Tests for monitoring_user_sql."""
 
     def test_block_is_copy_pasteable(self):
-        """The block carries both statements, terminated by semicolons."""
+        """The block carries every statement, terminated by semicolons."""
         sql = monitoring_user_sql("monitoring", "s3cret")
         assert (
             "CREATE USER IF NOT EXISTS 'monitoring'@'%' IDENTIFIED BY 's3cret';" in sql
         )
         assert "GRANT USAGE, REPLICATION CLIENT ON *.* TO 'monitoring'@'%';" in sql
+        assert "GRANT SELECT ON mysql.user TO 'monitoring'@'%';" in sql
 
     def test_password_quotes_are_escaped(self):
         """Single quotes in the password are doubled."""
@@ -131,7 +136,7 @@ class TestCreateMonitoringUser:
     """Tests for create_monitoring_user."""
 
     def test_executes_commits_and_closes(self):
-        """Both statements run, the password is bound, everything is released."""
+        """Every statement runs, the password is bound, everything is released."""
         connection = FakeConnection()
         connector = FakeConnector(connection)
 
@@ -139,9 +144,11 @@ class TestCreateMonitoringUser:
 
         queries = [query for query, _ in connection.executed]
         assert queries[0].startswith("CREATE USER IF NOT EXISTS")
-        assert queries[1].startswith("GRANT")
+        assert queries[1].startswith("GRANT USAGE, REPLICATION CLIENT")
+        assert queries[2].startswith("GRANT SELECT ON mysql.user")
         assert connection.executed[0][1] == ("s3cret",)
         assert connection.executed[1][1] is None
+        assert connection.executed[2][1] is None
         assert connection.committed is True
         assert connection.closed is True
         assert connector.closed is True

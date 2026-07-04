@@ -1,8 +1,8 @@
-"""CLI integration tests using Click's CliRunner.
+"""
+CLI integration tests using Click's CliRunner.
 
-The MySQLClient query methods are patched at class level, so the whole
-CLI stack (click parsing, config loading, service, Nagios runner) runs
-for real without any MySQL server.
+The MySQLClient query methods are patched at class level, so the whole CLI stack (click parsing,
+config loading, service, Nagios runner) runs for real without any MySQL server.
 """
 
 import pytest
@@ -438,6 +438,87 @@ class TestLongRunningCommand:
         assert "longrunning=25" in result.output
 
 
+class TestSecurityCommand:
+    """End-to-end runs of the security command."""
+
+    def test_clean_accounts_are_ok(self, config_file, monkeypatch):
+        """The hardened fixture reports zero risky accounts."""
+        _patch_client(monkeypatch, get_user_accounts=_DATA["user_accounts"])
+        result = CliRunner().invoke(main, ["security", "-c", config_file])
+        assert result.exit_code == 0
+        assert "security=0" in result.output
+        assert "0 risky accounts" in result.output
+
+    def test_one_risky_account_is_warning(self, config_file, monkeypatch):
+        """A single finding breaches the default warning of 0."""
+        rows = _DATA["user_accounts"] + [
+            {
+                "User": "root",
+                "Host": "10.0.0.5",
+                "Super_priv": "Y",
+                "plugin": "caching_sha2_password",
+                "authentication_string": "$A$005$hash",
+                "account_locked": "N",
+            }
+        ]
+        _patch_client(monkeypatch, get_user_accounts=rows)
+        result = CliRunner().invoke(main, ["security", "-c", config_file])
+        assert result.exit_code == 1
+        assert "security=1" in result.output
+        assert "'root'@'10.0.0.5'" in result.output
+
+    def test_many_risky_accounts_are_critical(self, config_file, monkeypatch):
+        """Six risky accounts breach the default critical of 5."""
+        rows = [
+            {
+                "User": f"app{i}",
+                "Host": "%",
+                "plugin": "caching_sha2_password",
+                "authentication_string": "$A$005$hash",
+                "account_locked": "N",
+            }
+            for i in range(6)
+        ]
+        _patch_client(monkeypatch, get_user_accounts=rows)
+        result = CliRunner().invoke(main, ["security", "-c", config_file])
+        assert result.exit_code == 2
+        assert "security=6" in result.output
+
+    def test_monitoring_user_wildcard_is_exempt(self, config_file, monkeypatch):
+        """The [mysql] user itself is not flagged for its % host scope."""
+        rows = [
+            {
+                "User": "monitoring",
+                "Host": "%",
+                "plugin": "caching_sha2_password",
+                "authentication_string": "$A$005$hash",
+                "account_locked": "N",
+            }
+        ]
+        _patch_client(monkeypatch, get_user_accounts=rows)
+        result = CliRunner().invoke(main, ["security", "-c", config_file])
+        assert result.exit_code == 0
+        assert "security=0" in result.output
+
+    def test_allowlist_from_the_ini_exempts_accounts(self, tmp_path, monkeypatch):
+        """[security] allow silences a known account without escaping the %."""
+        ini = tmp_path / "check_mysql.ini"
+        ini.write_text(_INI + "\n[security]\nallow = app@%\n")
+        rows = [
+            {
+                "User": "app",
+                "Host": "%",
+                "plugin": "caching_sha2_password",
+                "authentication_string": "$A$005$hash",
+                "account_locked": "N",
+            }
+        ]
+        _patch_client(monkeypatch, get_user_accounts=rows)
+        result = CliRunner().invoke(main, ["security", "-c", str(ini)])
+        assert result.exit_code == 0
+        assert "security=0" in result.output
+
+
 class TestSqlCommand:
     """End-to-end runs of the sql command."""
 
@@ -495,6 +576,7 @@ class TestCliSurface:
             "latency",
             *_HEALTH_COMMANDS,
             "longrunning",
+            "security",
             "sql",
         ):
             assert command in result.output

@@ -1,15 +1,15 @@
-"""End-to-end tests running the real CLI against the local MySQL server.
+"""
+End-to-end tests running the real CLI against the local MySQL server.
 
-No mocks: every test drives the installed ``check_mysql`` binary as a
-subprocess with the repository's ``check_mysql.ini`` — real config
-loading, real PyMySQL connection, real SQL, real Nagios output and exit
-codes. Threshold ranges are chosen so the expected state is deterministic
-whatever the server reports: ``1:`` accepts any live server, ``@0:HUGE``
-alerts on any value, ``HUGE`` never alerts.
+No mocks: every test drives the installed ``check_mysql`` binary as a subprocess with the
+repository's ``check_mysql.ini`` — real config loading, real PyMySQL connection, real SQL, real
+Nagios output and exit codes. Threshold ranges are chosen so the expected state is deterministic
+whatever the server reports: ``1:`` accepts any live server, ``@0:HUGE`` alerts on any value,
+``HUGE`` never alerts.
 
-Excluded from the default pytest run (``-m "not e2e"`` in pytest.ini);
-``pdm run test-e2e`` runs the suite and gates ``pdm run publish`` and the
-publish.sh pipeline — a down server blocks the release, by design.
+Excluded from the default pytest run (``-m "not e2e"`` in pytest.ini); ``pdm run test-e2e`` runs the
+suite and gates ``pdm run publish`` and the publish.sh pipeline — a down server blocks the release,
+by design.
 """
 
 import subprocess
@@ -135,8 +135,9 @@ class TestReplicationE2E:
     """The replication command against the real server."""
 
     def test_standalone_or_replica(self, run_cli, ini_path):
-        """A standalone server is UNKNOWN with a clear message; a replica is
-        judged by the thresholds (any code but a crash)."""
+        """A standalone server is UNKNOWN with a clear message; a replica is judged by the
+        thresholds (any code but a crash).
+        """
         result = run_cli("replication", "-c", ini_path)
         assert result.returncode in (0, 1, 2, 3), result.stdout + result.stderr
         if result.returncode == 3:
@@ -144,6 +145,29 @@ class TestReplicationE2E:
             assert "not a replica" in result.stdout
         else:
             assert "replication=" in result.stdout
+
+
+class TestSecurityE2E:
+    """The security command against the real server."""
+
+    def test_audits_or_unknown_without_grant(self, run_cli, ini_path):
+        """A huge ceiling accepts any audit result; a monitoring user without SELECT on
+        mysql.user yields UNKNOWN with the server's denial.
+        """
+        result = run_cli("security", "-c", ini_path, "-W", HUGE, "-C", HUGE)
+        assert result.returncode in (0, 3), result.stdout + result.stderr
+        if result.returncode == 0:
+            assert "security=" in result.stdout
+            assert "audited" in result.stdout
+        else:
+            assert "UNKNOWN" in result.stdout
+
+    def test_forced_critical(self, run_cli, ini_path):
+        """An inside range over any count flags the audit when it runs at all."""
+        result = run_cli("security", "-c", ini_path, "-C", f"@0:{HUGE}")
+        assert result.returncode in (2, 3), result.stdout + result.stderr
+        if result.returncode == 2:
+            assert "MYSQL CRITICAL" in result.stdout
 
 
 class TestInitE2E:
@@ -167,8 +191,9 @@ class TestInitE2E:
         assert "keep-me" in target.read_text()
 
     def test_guided_init_connects_then_checks(self, run_cli, tmp_path, mysql_settings):
-        """Full journey: guided init probes the real server, then a check
-        runs against the configuration it generated."""
+        """Full journey: guided init probes the real server, then a check runs against the
+        configuration it generated.
+        """
         target = tmp_path / "generated.ini"
         answers = (
             "\n".join(
@@ -219,8 +244,9 @@ class TestErrorPathsE2E:
         assert "Access denied" in result.stdout
 
     def test_missing_config_is_unknown(self, run_cli):
-        """A missing configuration file yields exit 3 (lookup runs from a
-        neutral directory, away from the repo-root configuration)."""
+        """A missing configuration file yields exit 3 (lookup runs from a neutral directory, away
+        from the repo-root configuration).
+        """
         result = run_cli("uptime", "-c", "does-not-exist.ini")
         assert result.returncode == 3
         assert "UNKNOWN" in result.stdout
@@ -250,7 +276,7 @@ class TestCliSurfaceE2E:
             assert command in result.stdout
 
     def test_module_entrypoint(self, ini_path):
-        """python -m check_mysql drives the same real check."""
+        """Python -m check_mysql drives the same real check."""
         proc = subprocess.run(
             [
                 sys.executable,

@@ -1,10 +1,10 @@
-"""Fixtures for the end-to-end suite.
+"""
+Fixtures for the end-to-end suite.
 
-Unlike the unit and integration suites, these tests need the real MySQL
-server configured in the repository's ``check_mysql.ini`` (see
-``check_mysql init``). They are excluded from the default pytest run by
-the ``e2e`` marker and gate ``pdm run publish`` and publish.sh through
-``pdm run test-e2e``.
+Unlike the unit and integration suites, these tests need the real MySQL server configured in the
+repository's ``check_mysql.ini`` (see ``check_mysql init``). They are excluded from the default
+pytest run by the ``e2e`` marker and gate ``pdm run publish`` and publish.sh through ``pdm run
+test-e2e``.
 """
 
 import configparser
@@ -40,11 +40,12 @@ def mysql_settings(ini_path):
 
 @pytest.fixture
 def run_cli(tmp_path):
-    """Run the installed check_mysql binary from a neutral working directory.
+    """
+    Run the installed check_mysql binary from a neutral working directory.
 
-    The console script is the artifact Nagios executes in production; the
-    neutral cwd keeps the repo-root check_mysql.ini out of the default
-    config lookup, so every test states its configuration explicitly.
+    The console script is the artifact Nagios executes in production; the neutral cwd keeps the
+    repo-root check_mysql.ini out of the default config lookup, so every test states its
+    configuration explicitly.
     """
 
     def _run(*args, stdin=None):

@@ -99,6 +99,7 @@ check_mysql uptime -H db2.example.com -P 3307
 | `tmpdisktables` | Share of temporary tables created on disk | percent | W:`25`, C:`50` |
 | `openfiles` | Open_files vs open_files_limit | percent | W:`80`, C:`95` |
 | `longrunning` | Queries running longer than 60s (needs `PROCESS`) | count | W:`10`, C:`20` |
+| `security` | Over-privileged or insecure accounts: anonymous, passwordless, wildcard `%` host, remote root, dangerous privileges reachable remotely (needs `SELECT` on `mysql.user`) | count | W:`0`, C:`5` |
 | `sql` | Scalar result of an arbitrary statement (`--sql "SELECT ..."`) | scalar | - |
 
 Thresholds are standard **Nagios ranges**: `95` alerts above 95, `300:` alerts below 300, `10:20` alerts outside the interval.
@@ -162,9 +163,19 @@ When the `[ssh]` section is present, the plugin opens the tunnel first and conne
 ```sql
 CREATE USER 'nagios'@'%' IDENTIFIED BY 'secret';
 GRANT USAGE, REPLICATION CLIENT ON *.* TO 'nagios'@'%';
+GRANT SELECT ON mysql.user TO 'nagios'@'%';
 ```
 
-`REPLICATION CLIENT` (or `REPLICATION_SLAVE_ADMIN` on MySQL 8+) is only needed for the `replication` command. Add `GRANT PROCESS ON *.*` for the `longrunning` command (to see other users' queries), and the relevant `SELECT` grants for whatever the `sql` command queries.
+This is exactly what `check_mysql init` creates (or prints) for you.
+
+`REPLICATION CLIENT` (or `REPLICATION_SLAVE_ADMIN` on MySQL 8+) is only needed for the `replication` command, and `SELECT` on `mysql.user` only for the `security` command. Add `GRANT PROCESS ON *.*` for the `longrunning` command (to see other users' queries), and the relevant `SELECT` grants for whatever the `sql` command queries.
+
+The `security` audit skips locked accounts, and exempts the `[mysql]` monitoring user from the wildcard-host criterion only (it must be remotely reachable to do its job — it is still flagged if passwordless or over-privileged). Additional accounts are exempted from every criterion through the `user@host` entries of the optional `[security]` section:
+
+```ini
+[security]
+allow = backup@10.0.0.5, debian-sys-maint@localhost, app@%
+```
 
 ## 🔧 Command Line Options
 

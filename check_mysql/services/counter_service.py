@@ -55,11 +55,11 @@ COUNTER_SPECS: tuple[CounterSpec, ...] = (
 
 
 class CounterRateService:
-    """Service reporting a status counter as an average rate per second.
+    """
+    Service reporting a status counter as an average rate per second.
 
-    check_mysql_health computes these rates as deltas between two runs
-    persisted in a state file; here the rate is averaged since server
-    start instead, which needs no local state.
+    check_mysql_health computes these rates as deltas between two runs persisted in a state file;
+    here the rate is averaged since server start instead, which needs no local state.
     """
 
     def __init__(
