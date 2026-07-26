@@ -48,23 +48,43 @@ check_mysql = "check_mysql.cli:main"
 
 [tool.ruff.lint]
 # Baseline: the ruff 0.16 default set (413 rules). These families are clean
-# on top of it and locked in so regressions fail the lint gate. Candidate
-# families still carrying debt (D, PL, TRY, ARG) are tracked on Kenboard.
+# on top of it and locked in so regressions fail the lint gate.
 extend-select = [
     "A",
+    "ARG",
     "B",
     "C4",
+    "D",
     "ERA",
     "FURB",
     "I",
     "N",
+    "PL",
     "PT",
     "PTH",
     "RET",
     "RUF",
     "SIM",
+    "TRY",
     "UP",
 ]
+# TRY003 contradicts the plugin's error style: the message raised at the
+# fault site IS the Nagios output text; one exception subclass per message
+# would add indirection for no gain.
+ignore = ["TRY003"]
+
+[tool.ruff.lint.pydocstyle]
+# Matches the docformatter layout (pre-summary-newline); the google/numpy
+# section rules do not apply to this codebase.
+convention = "pep257"
+
+[tool.ruff.lint.per-file-ignores]
+# Click injects every option as a parameter: the arity of command handlers
+# is the CLI surface, not API complexity.
+"check_mysql/cli/**" = ["PLR0913", "PLR0917"]
+# Tests assert against literal expected values, and fakes mirror the arity
+# of the real signatures they stand in for.
+"tests/**" = ["PLR2004", "PLR0913", "PLR0917"]
 
 [tool.pyright]
 pythonVersion = "3.10"

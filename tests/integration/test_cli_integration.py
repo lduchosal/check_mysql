@@ -38,7 +38,7 @@ def config_file(tmp_path):
 def _patch_client(monkeypatch, **methods):
     """Patch MySQLClient query methods so no server is needed."""
     for name, value in methods.items():
-        monkeypatch.setattr(MySQLClient, name, lambda self, _value=value: _value)
+        monkeypatch.setattr(MySQLClient, name, lambda _self, _value=value: _value)
 
 
 class TestUptimeCommand:
@@ -152,7 +152,7 @@ class TestPingCommand:
     def test_unreachable_server_is_critical(self, config_file, monkeypatch):
         """A connection failure exits 2 (CRITICAL), not 3 (UNKNOWN)."""
 
-        def refuse(self):
+        def refuse(_self):
             """Raise like the connector on a refused connection."""
             raise MySQLConnectionError(
                 "Cannot connect to MySQL at 127.0.0.1:3306: refused"
@@ -294,7 +294,7 @@ class TestInitGuided:
 
             instances: ClassVar[list["FakeConnector"]] = []
 
-            def __init__(self, mysql_config, ssh_config=None, verbose_level=0):
+            def __init__(self, mysql_config, ssh_config=None):
                 self.mysql_config = mysql_config
                 self.ssh_config = ssh_config
                 FakeConnector.instances.append(self)
@@ -560,7 +560,7 @@ class TestSqlCommand:
 
     def test_ok_without_thresholds(self, config_file, monkeypatch):
         """Without -W/-C even a negative scalar reports OK."""
-        monkeypatch.setattr(MySQLClient, "query_scalar", lambda self, query: -7.0)
+        monkeypatch.setattr(MySQLClient, "query_scalar", lambda _self, _query: -7.0)
         result = CliRunner().invoke(
             main, ["sql", "-c", config_file, "--sql", "SELECT -7"]
         )
@@ -569,7 +569,7 @@ class TestSqlCommand:
 
     def test_thresholds_apply(self, config_file, monkeypatch):
         """An explicit warning range flags the result."""
-        monkeypatch.setattr(MySQLClient, "query_scalar", lambda self, query: 42.0)
+        monkeypatch.setattr(MySQLClient, "query_scalar", lambda _self, _query: 42.0)
         result = CliRunner().invoke(
             main,
             ["sql", "-c", config_file, "--sql", "SELECT 42", "-W", "10", "-C", "100"],

@@ -92,6 +92,20 @@ et nouvelle métrique cliquet `noqa_count` (suppressions lint justifiées,
 baseline 6 — ne peut plus croître). Prochaines cibles : `max_func_lines`
 → 40, familles ruff restantes D (70), PL (96), TRY (29), ARG (9).
 
+### Palier 6 (2026-07-26, familles ruff D/PL/TRY/ARG)
+
+Résorption des quatre familles restantes (task #994) : `extend-select`
+complété (17 familles), convention pydocstyle `pep257` (alignée sur le
+layout docformatter — la dette D réelle était 7, corrigée), constantes de
+verbosité nommées dans logging_config (PLR2004), fakes de tests renommés
+`_`-préfixés (ARG, zéro suppression). Ignores scopés et justifiés dans
+pyproject : PLR0913/PLR0917 sur `check_mysql/cli/**` (arité = surface
+click) et tests (fakes), PLR2004 sur tests (littéraux attendus) ; TRY003
+en ignore global documenté (le message au site du raise EST la sortie
+Nagios — décision de style, pas de la dette). Resserrage :
+`max_func_lines` 45 → 43 (mesuré : 42). Prochaines cibles :
+`max_func_lines` → 40, consolidation flake8 → ruff à couverture égale.
+
 ## Tests end-to-end (serveur local)
 
 `tests/e2e/` pilote le **binaire installé** (`.venv/bin/check_mysql`) en

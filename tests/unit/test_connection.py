@@ -101,7 +101,7 @@ class TestDirectConnection:
     def test_connect_failure_raises_connection_error(self, monkeypatch):
         """A PyMySQL error is wrapped in MySQLConnectionError."""
 
-        def failing_connect(**kwargs):
+        def failing_connect(**_kwargs):
             raise pymysql.MySQLError("access denied")
 
         monkeypatch.setattr(
@@ -169,7 +169,7 @@ class TestTunnelConnection:
             "check_mysql.core.connection.sshtunnel.SSHTunnelForwarder", FakeTunnel
         )
 
-        def failing_connect(**kwargs):
+        def failing_connect(**_kwargs):
             raise pymysql.MySQLError("access denied")
 
         monkeypatch.setattr(

@@ -4,6 +4,11 @@ import logging
 import sys
 from typing import Any
 
+# Verbosity thresholds set by repeated -v flags on the CLI.
+VERBOSE_INFO = 1
+VERBOSE_DEBUG = 2
+VERBOSE_TRACE = 3
+
 
 class VerboseLogger:
     """Logger configured for different verbosity levels."""
@@ -34,13 +39,13 @@ class VerboseLogger:
         handler = logging.StreamHandler(sys.stderr)
 
         # Set format based on verbosity
-        if self.verbose_level >= 3:
+        if self.verbose_level >= VERBOSE_TRACE:
             # Full trace format
             formatter = logging.Formatter(
                 "[%(levelname)s] %(asctime)s %(name)s:%(lineno)d - %(message)s",
                 datefmt="%H:%M:%S",
             )
-        elif self.verbose_level >= 2:
+        elif self.verbose_level >= VERBOSE_DEBUG:
             # Debug format
             formatter = logging.Formatter("[%(levelname)s] %(name)s - %(message)s")
         else:
@@ -51,29 +56,29 @@ class VerboseLogger:
         self.logger.addHandler(handler)
 
         # Set level based on verbosity
-        if self.verbose_level >= 2:
+        if self.verbose_level >= VERBOSE_DEBUG:
             self.logger.setLevel(logging.DEBUG)
         else:
             self.logger.setLevel(logging.INFO)
 
     def info(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log info message if verbose >= 1."""
-        if self.verbose_level >= 1:
+        if self.verbose_level >= VERBOSE_INFO:
             self.logger.info(message, *args, **kwargs)
 
     def debug(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log debug message if verbose >= 2."""
-        if self.verbose_level >= 2:
+        if self.verbose_level >= VERBOSE_DEBUG:
             self.logger.debug(message, *args, **kwargs)
 
     def trace(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log trace message if verbose >= 3."""
-        if self.verbose_level >= 3:
+        if self.verbose_level >= VERBOSE_TRACE:
             self.logger.debug(f"TRACE: {message}", *args, **kwargs)
 
     def sql_query(self, query: str, elapsed: float | None = None) -> None:
         """Log SQL query details if verbose >= 2."""
-        if self.verbose_level >= 2:
+        if self.verbose_level >= VERBOSE_DEBUG:
             if elapsed is not None:
                 self.logger.debug(f"SQL {query} ({elapsed:.3f}s)")
             else:
@@ -81,13 +86,13 @@ class VerboseLogger:
 
     def method_entry(self, method_name: str, **kwargs: Any) -> None:
         """Log method entry if verbose >= 3."""
-        if self.verbose_level >= 3:
+        if self.verbose_level >= VERBOSE_TRACE:
             args_str = ", ".join(f"{k}={v}" for k, v in kwargs.items())
             self.logger.debug(f"TRACE: -> {method_name}({args_str})")
 
     def method_exit(self, method_name: str, result: Any = None) -> None:
         """Log method exit if verbose >= 3."""
-        if self.verbose_level >= 3:
+        if self.verbose_level >= VERBOSE_TRACE:
             result_str = f" = {result}" if result is not None else ""
             self.logger.debug(f"TRACE: <- {method_name}{result_str}")
 

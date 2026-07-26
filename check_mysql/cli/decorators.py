@@ -7,7 +7,7 @@ import click
 
 
 def common_options(func: Callable[..., Any]) -> Callable[..., Any]:
-    """Decorator applying the options shared by every check command."""
+    """Apply the options shared by every check command."""
     func = click.option(
         "-c", "--config", default="check_mysql.ini", help="Configuration file path"
     )(func)

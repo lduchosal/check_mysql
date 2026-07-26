@@ -32,7 +32,7 @@ def ini_path():
 
 @pytest.fixture(scope="session")
 def mysql_settings(ini_path):
-    """The [mysql] section of the repository configuration."""
+    """Return the [mysql] section of the repository configuration."""
     config = configparser.ConfigParser()
     config.read(ini_path)
     return config["mysql"]

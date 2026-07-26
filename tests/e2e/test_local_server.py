@@ -135,8 +135,10 @@ class TestReplicationE2E:
     """The replication command against the real server."""
 
     def test_standalone_or_replica(self, run_cli, ini_path):
-        """A standalone server is UNKNOWN with a clear message; a replica is judged by the
-        thresholds (any code but a crash).
+        """
+        A standalone server is UNKNOWN with a clear message.
+
+        A replica is judged by the thresholds (any code but a crash).
         """
         result = run_cli("replication", "-c", ini_path)
         assert result.returncode in (0, 1, 2, 3), result.stdout + result.stderr
@@ -151,8 +153,10 @@ class TestSecurityE2E:
     """The security command against the real server."""
 
     def test_audits_or_unknown_without_grant(self, run_cli, ini_path):
-        """A huge ceiling accepts any audit result; a monitoring user without SELECT on mysql.user
-        yields UNKNOWN with the server's denial.
+        """
+        A huge ceiling accepts any audit result.
+
+        A monitoring user without SELECT on mysql.user yields UNKNOWN with the server's denial.
         """
         result = run_cli("security", "-c", ini_path, "-W", HUGE, "-C", HUGE)
         assert result.returncode in (0, 3), result.stdout + result.stderr
@@ -191,8 +195,11 @@ class TestInitE2E:
         assert "keep-me" in target.read_text()
 
     def test_guided_init_connects_then_checks(self, run_cli, tmp_path, mysql_settings):
-        """Full journey: guided init probes the real server, then a check runs against the
-        configuration it generated.
+        """
+        Full journey from guided init to a passing check.
+
+        Guided init probes the real server, then a check runs against the configuration it
+        generated.
         """
         target = tmp_path / "generated.ini"
         answers = (
@@ -244,8 +251,10 @@ class TestErrorPathsE2E:
         assert "Access denied" in result.stdout
 
     def test_missing_config_is_unknown(self, run_cli):
-        """A missing configuration file yields exit 3 (lookup runs from a neutral directory, away
-        from the repo-root configuration).
+        """
+        A missing configuration file yields exit 3.
+
+        The lookup runs from a neutral directory, away from the repo-root configuration.
         """
         result = run_cli("uptime", "-c", "does-not-exist.ini")
         assert result.returncode == 3

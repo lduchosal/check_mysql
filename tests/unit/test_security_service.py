@@ -106,7 +106,7 @@ class TestHostFindings:
         assert "root reachable remotely" in result["details"][1]
 
     def test_local_root_is_not_flagged(self):
-        """root bound to localhost, 127.0.0.1 or ::1 is expected."""
+        """The root account bound to localhost, 127.0.0.1 or ::1 is expected."""
         rows = [
             _row("root", "localhost", Super_priv="Y", Grant_priv="Y"),
             _row("root", "127.0.0.1", Super_priv="Y"),
