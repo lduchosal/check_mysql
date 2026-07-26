@@ -2,7 +2,7 @@
 
 # pyright: reportUnusedFunction=false
 
-from typing import Any, Optional
+from typing import Any
 
 import click
 
@@ -26,10 +26,10 @@ def register_sql_commands(main_group: Any) -> None:
     def sql_cmd(
         config: str,
         verbose: int,
-        hostname: Optional[str],
-        port: Optional[int],
-        warning: Optional[str],
-        critical: Optional[str],
+        hostname: str | None,
+        port: int | None,
+        warning: str | None,
+        critical: str | None,
         statement: str,
     ) -> None:
         """Check the scalar result of an arbitrary SQL statement."""

@@ -1,7 +1,7 @@
 """Shared execution path for the check commands."""
 
 import sys
-from typing import Optional, Protocol
+from typing import Protocol
 
 from check_mysql.core.config import get_mysql_config, get_ssh_config, load_config
 from check_mysql.core.connection import MySQLConnector
@@ -25,10 +25,10 @@ def run_check(
     command_name: str,
     config: str,
     verbose: int,
-    hostname: Optional[str],
-    port: Optional[int],
-    warning: Optional[str],
-    critical: Optional[str],
+    hostname: str | None,
+    port: int | None,
+    warning: str | None,
+    critical: str | None,
 ) -> None:
     """
     Run a check command end to end and exit with the Nagios code.
@@ -50,6 +50,6 @@ def run_check(
 
         sys.exit(result)
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"UNKNOWN: {e}")
         sys.exit(3)

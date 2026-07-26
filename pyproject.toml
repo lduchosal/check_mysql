@@ -46,6 +46,26 @@ Documentation = "https://github.com/lduchosal/check_mysql/blob/main/README.md"
 [project.scripts]
 check_mysql = "check_mysql.cli:main"
 
+[tool.ruff.lint]
+# Baseline: the ruff 0.16 default set (413 rules). These families are clean
+# on top of it and locked in so regressions fail the lint gate. Candidate
+# families still carrying debt (D, PL, TRY, ARG) are tracked on Kenboard.
+extend-select = [
+    "A",
+    "B",
+    "C4",
+    "ERA",
+    "FURB",
+    "I",
+    "N",
+    "PT",
+    "PTH",
+    "RET",
+    "RUF",
+    "SIM",
+    "UP",
+]
+
 [tool.pyright]
 pythonVersion = "3.10"
 typeCheckingMode = "strict"
@@ -160,7 +180,7 @@ dev = [
     "pytest-cov>=2.0",
     "twine>=6.2.0",
     "pdm>=2.0.0",
-    "ruff>=0.13.0",
+    "ruff>=0.16.0",
     "pyright>=1.1",
     "pdm-bump",
     "vulture>=2.0",

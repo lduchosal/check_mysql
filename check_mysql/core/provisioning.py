@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import List, Tuple
-
 from check_mysql.core.connection import MySQLConnector
 from check_mysql.core.logging_config import get_verbose_logger
 
@@ -19,7 +17,7 @@ def _quote_account(user: str, host_scope: str) -> str:
 
 def monitoring_user_statements(
     user: str, host_scope: str = MONITORING_HOST_SCOPE
-) -> List[Tuple[str, bool]]:
+) -> list[tuple[str, bool]]:
     """
     Statements creating the monitoring user and its grants.
 

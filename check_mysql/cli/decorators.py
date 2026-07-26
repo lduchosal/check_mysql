@@ -1,6 +1,7 @@
 """CLI decorators for check_mysql."""
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import click
 
@@ -20,8 +21,6 @@ def common_options(func: Callable[..., Any]) -> Callable[..., Any]:
     func = click.option(
         "-W", "--warning", help="Warning threshold (Nagios range, e.g. 80 or 300:)"
     )(func)
-    func = click.option(
+    return click.option(
         "-C", "--critical", help="Critical threshold (Nagios range, e.g. 95 or 60:)"
     )(func)
-
-    return func

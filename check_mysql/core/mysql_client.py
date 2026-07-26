@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Optional
+from typing import Any
 
 import pymysql
 import pymysql.cursors
@@ -26,9 +26,10 @@ class MySQLClient:
         """Initialize with a connector; the connection opens lazily."""
         self.connector = connector
         self.logger = get_verbose_logger(__name__, verbose_level)
-        self._connection: Optional[pymysql.connections.Connection] = None
+        self._connection: pymysql.connections.Connection | None = None
 
-    def __enter__(self) -> "MySQLClient":
+    # typing.Self would satisfy PYI034 but needs Python >= 3.11; 3.10 is supported.
+    def __enter__(self) -> MySQLClient:  # noqa: PYI034
         """Return self; the connection opens on first query."""
         return self
 
@@ -66,7 +67,7 @@ class MySQLClient:
         """Return SHOW GLOBAL VARIABLES as a name/value mapping."""
         return self._fetch_pairs("SHOW GLOBAL VARIABLES")
 
-    def get_replica_status(self) -> Optional[dict[str, Any]]:
+    def get_replica_status(self) -> dict[str, Any] | None:
         """
         Return SHOW REPLICA STATUS as a row mapping, or None when not a replica.
 
@@ -82,7 +83,7 @@ class MySQLClient:
             try:
                 with connection.cursor(pymysql.cursors.DictCursor) as cursor:
                     cursor.execute(query)
-                    row: Optional[dict[str, Any]] = cursor.fetchone()
+                    row: dict[str, Any] | None = cursor.fetchone()
             except pymysql.MySQLError as exc:
                 self.logger.debug(f"{query} failed: {exc}")
                 continue

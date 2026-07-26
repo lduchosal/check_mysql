@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 def load_fixture_data() -> dict[str, Any]:
@@ -20,13 +20,13 @@ class MockMySQLClient:
 
     def __init__(
         self,
-        status: Optional[dict[str, str]] = None,
-        variables: Optional[dict[str, str]] = None,
-        replica_status: Optional[dict[str, Any]] = None,
+        status: dict[str, str] | None = None,
+        variables: dict[str, str] | None = None,
+        replica_status: dict[str, Any] | None = None,
         ping_ms: float = 3.42,
-        versions: Optional[dict[str, str]] = None,
-        processlist: Optional[list[dict[str, Any]]] = None,
-        user_accounts: Optional[list[dict[str, Any]]] = None,
+        versions: dict[str, str] | None = None,
+        processlist: list[dict[str, Any]] | None = None,
+        user_accounts: list[dict[str, Any]] | None = None,
         scalar: float = 42.0,
     ):
         """Initialize with fixture data, defaulting to status_data.json."""
@@ -51,7 +51,7 @@ class MockMySQLClient:
             user_accounts if user_accounts is not None else data["user_accounts"]
         )
         self.scalar = scalar
-        self.last_scalar_query: Optional[str] = None
+        self.last_scalar_query: str | None = None
 
     def get_global_status(self) -> dict[str, str]:
         """Return the fixture global status."""
@@ -61,7 +61,7 @@ class MockMySQLClient:
         """Return the fixture global variables."""
         return self.variables
 
-    def get_replica_status(self) -> Optional[dict[str, Any]]:
+    def get_replica_status(self) -> dict[str, Any] | None:
         """Return the fixture replication status."""
         return self.replica_status
 

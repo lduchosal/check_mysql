@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 import pymysql
 import sshtunnel
 
@@ -24,14 +22,14 @@ class MySQLConnector:
     def __init__(
         self,
         mysql_config: MySQLConfig,
-        ssh_config: Optional[SSHConfig] = None,
+        ssh_config: SSHConfig | None = None,
         verbose_level: int = 0,
     ) -> None:
         """Initialize with MySQL settings and optional SSH tunnel settings."""
         self.mysql_config = mysql_config
         self.ssh_config = ssh_config
         self.logger = get_verbose_logger(__name__, verbose_level)
-        self._tunnel: Optional[sshtunnel.SSHTunnelForwarder] = None
+        self._tunnel: sshtunnel.SSHTunnelForwarder | None = None
 
     def open(self) -> pymysql.connections.Connection:
         """

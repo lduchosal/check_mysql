@@ -2,7 +2,7 @@
 
 # pyright: reportUnusedFunction=false
 
-from typing import Any, Optional
+from typing import Any
 
 from check_mysql.cli.decorators import common_options
 from check_mysql.cli.handlers import run_check
@@ -17,10 +17,10 @@ def register_connections_commands(main_group: Any) -> None:
     def connections_cmd(
         config: str,
         verbose: int,
-        hostname: Optional[str],
-        port: Optional[int],
-        warning: Optional[str],
-        critical: Optional[str],
+        hostname: str | None,
+        port: int | None,
+        warning: str | None,
+        critical: str | None,
     ) -> None:
         """Check current connections as a percentage of max_connections."""
         warning = warning if warning is not None else "80"

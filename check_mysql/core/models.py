@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional, Protocol, TypedDict
+from typing import Any, Protocol, TypedDict
 
 # ---------------------------------------------------------------------------
 # Configuration dataclasses
@@ -18,7 +18,7 @@ class MySQLConfig:
     port: int = 3306
     user: str = "root"
     password: str = ""
-    database: Optional[str] = None
+    database: str | None = None
     timeout: int = 10
 
 
@@ -29,8 +29,8 @@ class SSHConfig:
     host: str
     port: int = 22
     user: str = ""
-    password: Optional[str] = None
-    private_key: Optional[str] = None
+    password: str | None = None
+    private_key: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -67,7 +67,7 @@ class MySQLClientProtocol(Protocol):
         """Return SHOW GLOBAL VARIABLES as a name/value mapping."""
         ...
 
-    def get_replica_status(self) -> Optional[dict[str, Any]]:
+    def get_replica_status(self) -> dict[str, Any] | None:
         """Return SHOW REPLICA STATUS as a row mapping, or None when not a replica."""
         ...
 

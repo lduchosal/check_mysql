@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import configparser
 from pathlib import Path
-from typing import Optional
 
 from check_mysql.core.exceptions import ConfigurationError
 from check_mysql.core.models import MySQLConfig, SSHConfig
@@ -65,7 +64,7 @@ def load_config(config_path: str = "check_mysql.ini") -> configparser.ConfigPars
     return config
 
 
-def _find_config_file(config_path: str) -> Optional[str]:
+def _find_config_file(config_path: str) -> str | None:
     """Find the configuration file in the current directory or Nagios etc directories."""
     # If absolute path provided, use it
     if Path(config_path).is_absolute():
@@ -114,7 +113,7 @@ def write_default_config(
     return write_config(config_path, DEFAULT_CONFIG_TEMPLATE, force)
 
 
-def render_config(mysql: MySQLConfig, ssh: Optional[SSHConfig] = None) -> str:
+def render_config(mysql: MySQLConfig, ssh: SSHConfig | None = None) -> str:
     """
     Render a configuration file for the given settings.
 
@@ -153,8 +152,8 @@ def render_config(mysql: MySQLConfig, ssh: Optional[SSHConfig] = None) -> str:
 
 def get_mysql_config(
     config: configparser.ConfigParser,
-    hostname: Optional[str] = None,
-    port: Optional[int] = None,
+    hostname: str | None = None,
+    port: int | None = None,
 ) -> MySQLConfig:
     """Build the MySQL settings from the ``[mysql]`` section, with CLI overrides."""
     mysql = MySQLConfig()
@@ -203,7 +202,7 @@ def get_security_admins(config: configparser.ConfigParser) -> frozenset[str]:
     return frozenset(entry for entry in entries if entry)
 
 
-def get_ssh_config(config: configparser.ConfigParser) -> Optional[SSHConfig]:
+def get_ssh_config(config: configparser.ConfigParser) -> SSHConfig | None:
     """
     Build the SSH tunnel settings from the optional ``[ssh]`` section.
 

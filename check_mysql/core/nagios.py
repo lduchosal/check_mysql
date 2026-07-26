@@ -1,6 +1,6 @@
 """Nagios plugin implementation."""
 
-from typing import Any, List, Optional
+from typing import Any
 
 import nagiosplugin
 
@@ -16,7 +16,7 @@ class MySQLSummary(nagiosplugin.Summary):
     long output.
     """
 
-    def __init__(self, details: Optional[List[str]]) -> None:
+    def __init__(self, details: list[str] | None) -> None:
         """Initialize with detail lines."""
         self.details = details or []
 
@@ -38,9 +38,7 @@ class MySQLSummary(nagiosplugin.Summary):
 class MySQLResource(nagiosplugin.Resource):
     """Resource reporting a single scalar value under the MYSQL banner."""
 
-    def __init__(
-        self, command_name: str, value: float, uom: Optional[str] = None
-    ) -> None:
+    def __init__(self, command_name: str, value: float, uom: str | None = None) -> None:
         """Initialize with the command name, the probed value and optional unit."""
         super().__init__()
         self.command_name = command_name
@@ -52,7 +50,7 @@ class MySQLResource(nagiosplugin.Resource):
         """Return the service name displayed in the status line."""
         return "MYSQL"
 
-    def probe(self) -> List[nagiosplugin.Metric]:
+    def probe(self) -> list[nagiosplugin.Metric]:
         """Return the single metric for the check."""
         return [nagiosplugin.Metric(self.command_name, self.value, uom=self.uom)]
 
@@ -67,8 +65,8 @@ class NagiosPlugin:
 
     def check(
         self,
-        warning: Optional[str] = None,
-        critical: Optional[str] = None,
+        warning: str | None = None,
+        critical: str | None = None,
         verbose: int = 0,
     ) -> int:
         """
@@ -102,6 +100,6 @@ class NagiosPlugin:
         except CriticalError as exc:
             print(f"MYSQL CRITICAL - {exc}")
             return 2
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             print(f"UNKNOWN: {exc}")
             return 3

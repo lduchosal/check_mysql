@@ -1,5 +1,7 @@
 """Unit tests for the counter-rate services."""
 
+import re
+
 import pytest
 
 from check_mysql.core.exceptions import ValidationError
@@ -23,7 +25,7 @@ class TestCounterRateService:
         """The catalog holds the three distinct backported counter checks."""
         assert len(SPECS) == len(COUNTER_SPECS) == 3
 
-    @pytest.mark.parametrize("command,expected", EXPECTED_FIXTURE_VALUES)
+    @pytest.mark.parametrize(("command", "expected"), EXPECTED_FIXTURE_VALUES)
     def test_fixture_values(self, command, expected):
         """Each spec computes the average rate per second since start."""
         result = CounterRateService(SPECS[command], MockMySQLClient()).get_result()
@@ -41,7 +43,9 @@ class TestCounterRateService:
         """MySQL 8 without a query cache raises with the removal hint."""
         client = MockMySQLClient(status={"Uptime": "100"})
         service = CounterRateService(SPECS["querycacheprunes"], client)
-        with pytest.raises(ValidationError, match="query cache removed in MySQL 8.0"):
+        with pytest.raises(
+            ValidationError, match=re.escape("query cache removed in MySQL 8.0")
+        ):
             service.get_result()
 
     def test_missing_uptime_raises(self):

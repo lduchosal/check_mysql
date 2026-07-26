@@ -2,7 +2,7 @@
 
 # pyright: reportUnusedFunction=false
 
-from typing import Any, Optional
+from typing import Any
 
 from check_mysql.cli.decorators import common_options
 from check_mysql.cli.handlers import run_check
@@ -17,10 +17,10 @@ def register_latency_commands(main_group: Any) -> None:
     def latency_cmd(
         config: str,
         verbose: int,
-        hostname: Optional[str],
-        port: Optional[int],
-        warning: Optional[str],
-        critical: Optional[str],
+        hostname: str | None,
+        port: int | None,
+        warning: str | None,
+        critical: str | None,
     ) -> None:
         """Check SELECT 1 round-trip latency in milliseconds."""
         warning = warning if warning is not None else "100"

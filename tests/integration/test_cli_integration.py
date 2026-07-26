@@ -5,6 +5,8 @@ The MySQLClient query methods are patched at class level, so the whole CLI stack
 config loading, service, Nagios runner) runs for real without any MySQL server.
 """
 
+from typing import ClassVar
+
 import pytest
 from click.testing import CliRunner
 
@@ -223,21 +225,20 @@ class TestInitGuided:
     def test_ssh_tunnel_settings(self, tmp_path):
         """Answering yes to the bastion writes an active [ssh] section."""
         target = tmp_path / "check_mysql.ini"
-        answers = "\n".join(
-            [
-                "10.0.0.12",  # MySQL host (seen from the bastion)
-                "",  # port 3306
-                "",  # monitoring user
-                "pw",  # monitoring password
-                "y",  # SSH tunnel?
-                "bastion.example.com",
-                "",  # SSH port 22
-                "tunnel",  # SSH user
-                "",  # private key default
-                "n",  # create user?
-                "n",  # test connection?
-            ]
-        )
+        answers_lines = [
+            "10.0.0.12",  # MySQL host (seen from the bastion)
+            "",  # port 3306
+            "",  # monitoring user
+            "pw",  # monitoring password
+            "y",  # SSH tunnel?
+            "bastion.example.com",
+            "",  # SSH port 22
+            "tunnel",  # SSH user
+            "",  # private key default
+            "n",  # create user?
+            "n",  # test connection?
+        ]
+        answers = "\n".join(answers_lines)
         result = CliRunner().invoke(
             main, ["init", "-c", str(target)], input=answers + "\n"
         )
@@ -291,7 +292,7 @@ class TestInitGuided:
         class FakeConnector:
             """Connector recording the admin credentials used."""
 
-            instances = []
+            instances: ClassVar[list["FakeConnector"]] = []
 
             def __init__(self, mysql_config, ssh_config=None, verbose_level=0):
                 self.mysql_config = mysql_config

@@ -4,7 +4,7 @@
 
 import secrets
 import sys
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
 import click
 
@@ -37,7 +37,7 @@ def register_init_commands(main_group: Any) -> None:
         try:
             runner = _run_default_init if yes else _run_guided_init
             failures = runner(config, force)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             click.echo(f"ERROR: {e}", err=True)
             sys.exit(1)
 
@@ -45,7 +45,7 @@ def register_init_commands(main_group: Any) -> None:
             sys.exit(1)
 
 
-def _run_default_init(config: str, force: bool) -> List[str]:
+def _run_default_init(config: str, force: bool) -> list[str]:
     """Write the default template and print the SQL to run manually."""
     path = write_default_config(config, force)
     click.echo(f"Created {path} (mode 600)")
@@ -55,9 +55,9 @@ def _run_default_init(config: str, force: bool) -> List[str]:
     return []
 
 
-def _run_guided_init(config: str, force: bool) -> List[str]:
+def _run_guided_init(config: str, force: bool) -> list[str]:
     """Interactive flow: prompts, config write, user creation, connection test."""
-    failures: List[str] = []
+    failures: list[str] = []
     mysql, ssh = _prompt_settings()
 
     path = write_config(config, render_config(mysql, ssh), force)
@@ -84,7 +84,7 @@ def _run_guided_init(config: str, force: bool) -> List[str]:
     return failures
 
 
-def _prompt_settings() -> Tuple[MySQLConfig, Optional[SSHConfig]]:
+def _prompt_settings() -> tuple[MySQLConfig, SSHConfig | None]:
     """Prompt for the MySQL and optional SSH tunnel settings."""
     mysql = MySQLConfig(
         host=click.prompt("MySQL host", default="localhost"),
@@ -93,7 +93,7 @@ def _prompt_settings() -> Tuple[MySQLConfig, Optional[SSHConfig]]:
         password=click.prompt("Monitoring password", default=secrets.token_urlsafe(12)),
     )
 
-    ssh: Optional[SSHConfig] = None
+    ssh: SSHConfig | None = None
     if click.confirm("Reach MySQL through an SSH bastion (tunnel)?", default=False):
         ssh = SSHConfig(
             host=click.prompt("SSH bastion host"),
@@ -104,7 +104,7 @@ def _prompt_settings() -> Tuple[MySQLConfig, Optional[SSHConfig]]:
     return mysql, ssh
 
 
-def _create_user(mysql: MySQLConfig, ssh: Optional[SSHConfig]) -> List[str]:
+def _create_user(mysql: MySQLConfig, ssh: SSHConfig | None) -> list[str]:
     """Create the monitoring user with admin credentials; reports, never raises."""
     admin = MySQLConfig(
         host=mysql.host,
@@ -117,7 +117,7 @@ def _create_user(mysql: MySQLConfig, ssh: Optional[SSHConfig]) -> List[str]:
     )
     try:
         create_monitoring_user(MySQLConnector(admin, ssh), mysql.user, mysql.password)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         click.echo(f"ERROR: could not create the monitoring user: {e}", err=True)
         return [f"user creation failed: {e}"]
 
@@ -125,13 +125,13 @@ def _create_user(mysql: MySQLConfig, ssh: Optional[SSHConfig]) -> List[str]:
     return []
 
 
-def _test_connection(mysql: MySQLConfig, ssh: Optional[SSHConfig]) -> List[str]:
+def _test_connection(mysql: MySQLConfig, ssh: SSHConfig | None) -> list[str]:
     """Probe the monitoring connection (SELECT 1 + uptime); reports, never raises."""
     try:
         with MySQLClient(MySQLConnector(mysql, ssh)) as client:
             elapsed_ms = round(client.ping(), 2)
             uptime = client.get_global_status().get("Uptime", "?")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         click.echo(f"ERROR: connection test failed: {e}", err=True)
         return [f"connection test failed: {e}"]
 

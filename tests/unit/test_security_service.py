@@ -141,7 +141,7 @@ class TestPrivilegeFindings:
             "Process_priv",
             "Shutdown_priv",
         )
-        rows = [_row("admin", "10.0.0.5", **{column: "Y" for column in columns})]
+        rows = [_row("admin", "10.0.0.5", **dict.fromkeys(columns, "Y"))]
         result = _result(rows)
         assert "remote privileges (ALL PRIVILEGES)" in result["details"][1]
 

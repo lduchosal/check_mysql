@@ -1,5 +1,7 @@
 """Unit tests for the ratio services backported from check_mysql_health."""
 
+import re
+
 import pytest
 
 from check_mysql.core.exceptions import ValidationError
@@ -28,7 +30,7 @@ class TestRatioService:
         """The catalog holds the eight distinct backported ratio checks."""
         assert len(SPECS) == len(RATIO_SPECS) == 8
 
-    @pytest.mark.parametrize("command,expected", EXPECTED_FIXTURE_VALUES)
+    @pytest.mark.parametrize(("command", "expected"), EXPECTED_FIXTURE_VALUES)
     def test_fixture_values(self, command, expected):
         """Each spec computes the documented percentage from the fixture."""
         result = RatioService(SPECS[command], MockMySQLClient()).get_result()
@@ -53,7 +55,9 @@ class TestRatioService:
     def test_querycache_hint_mentions_mysql8(self):
         """The MySQL 8 removal hint is part of the querycache error."""
         service = RatioService(SPECS["querycache"], MockMySQLClient(status={}))
-        with pytest.raises(ValidationError, match="query cache removed in MySQL 8.0"):
+        with pytest.raises(
+            ValidationError, match=re.escape("query cache removed in MySQL 8.0")
+        ):
             service.get_result()
 
     def test_invalid_counter_raises(self):

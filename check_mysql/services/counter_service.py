@@ -90,8 +90,10 @@ class CounterRateService:
 
         rate = round(count / uptime, 4)
         details: list[str] = [
-            f"{self.spec.label}: {count} since server start "
-            f"({rate}/s over {uptime} seconds)"
+            (
+                f"{self.spec.label}: {count} since server start "
+                f"({rate}/s over {uptime} seconds)"
+            )
         ]
         result: ServiceResult = {"value": rate, "details": details}
 

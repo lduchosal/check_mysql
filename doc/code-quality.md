@@ -81,6 +81,17 @@ Gate vert au palier 3 après l'extension de l'audit (weak/expired passwords,
 de `test_cov` 90 → 95 % et `max_func_lines` 50 → 45 (mesuré : 99,64 % / 42
 lignes). Prochaines cibles : `max_func_lines` → 40, `min_file_cov` → 95 %.
 
+### Palier 5 (2026-07-26, ruff 0.16 — 413 règles par défaut)
+
+Ruff 0.16 fait passer le jeu de règles par défaut de 59 à 413 (task #991) :
+dette résorbée (110 → 0, modernisation typing PEP 604/585 comprise), pin dev
+`ruff>=0.16.0`, et 13 familles supplémentaires verrouillées à zéro via
+`extend-select` dans pyproject.toml (A, B, C4, ERA, FURB, I, N, PT, PTH,
+RET, RUF, SIM, UP). Resserrage : `min_file_cov` 90 → 95 % (mesuré : 96 %)
+et nouvelle métrique cliquet `noqa_count` (suppressions lint justifiées,
+baseline 6 — ne peut plus croître). Prochaines cibles : `max_func_lines`
+→ 40, familles ruff restantes D (70), PL (96), TRY (29), ARG (9).
+
 ## Tests end-to-end (serveur local)
 
 `tests/e2e/` pilote le **binaire installé** (`.venv/bin/check_mysql`) en

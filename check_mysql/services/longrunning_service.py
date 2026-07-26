@@ -53,8 +53,10 @@ class LongRunningService:
         count = len(long_running)
 
         details: list[str] = [
-            f"{count} queries running longer than {LONG_RUNNING_SECONDS}s "
-            f"({len(processes)} processes total)"
+            (
+                f"{count} queries running longer than {LONG_RUNNING_SECONDS}s "
+                f"({len(processes)} processes total)"
+            )
         ]
         details.extend(_describe(row) for row in long_running)
         result: ServiceResult = {"value": count, "details": details}

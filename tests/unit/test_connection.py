@@ -1,5 +1,8 @@
 """Unit tests for the MySQL connector (direct and SSH tunnel)."""
 
+import re
+from typing import ClassVar
+
 import pymysql
 import pytest
 
@@ -33,7 +36,7 @@ class FakeConnection:
 class FakeTunnel:
     """Minimal stand-in for sshtunnel.SSHTunnelForwarder."""
 
-    instances = []
+    instances: ClassVar[list["FakeTunnel"]] = []
 
     def __init__(self, ssh_address_or_host, **kwargs):
         """Record constructor arguments."""
@@ -106,7 +109,9 @@ class TestDirectConnection:
         )
         connector = MySQLConnector(_MYSQL)
 
-        with pytest.raises(MySQLConnectionError, match="db.example.com:3307"):
+        with pytest.raises(
+            MySQLConnectionError, match=re.escape("db.example.com:3307")
+        ):
             connector.open()
 
 
@@ -155,7 +160,7 @@ class TestTunnelConnection:
         )
         connector = MySQLConnector(_MYSQL, _SSH)
 
-        with pytest.raises(SSHTunnelError, match="bastion.example.com"):
+        with pytest.raises(SSHTunnelError, match=re.escape("bastion.example.com")):
             connector.open()
 
     def test_mysql_failure_through_tunnel_stops_the_tunnel(self, monkeypatch):

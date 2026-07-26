@@ -50,7 +50,7 @@ BIG_FILE_LINES = 500
 # lduchosal : dès que le gate est vert, enregistrer un snapshot puis
 # resserrer au palier suivant — un gate vert n'est jamais un état stable.
 # On ne détend JAMAIS un seuil sans décision humaine explicite.
-GATE_PALIER = 4
+GATE_PALIER = 5
 GATE_MAX = {
     "max_file_lines": 500,
     "max_func_lines": 45,
@@ -62,11 +62,17 @@ GATE_MAX = {
 GATE_MIN = {
     "docstring_cov": 95.0,
     "test_cov": 95.0,
-    "min_file_cov": 90.0,
+    "min_file_cov": 95.0,
 }
 # Best-ever ratchet: counts may never exceed their lowest recorded value,
 # coverage may not drop more than RATCHET_COV_SLACK below its highest.
-RATCHET_DOWN = ("files_over_500", "funcs_over_50", "c901_over_10", "ruff_debt")
+RATCHET_DOWN = (
+    "files_over_500",
+    "funcs_over_50",
+    "c901_over_10",
+    "ruff_debt",
+    "noqa_count",
+)
 RATCHET_UP = ("test_cov",)
 RATCHET_COV_SLACK = 0.5
 
@@ -128,6 +134,20 @@ def _ruff_debt() -> int:
     """Count findings under the default ruff configuration (lint debt)."""
     proc = _run("ruff", "check", "check_mysql", "--output-format", "json")
     return len(json.loads(proc.stdout or "[]"))
+
+
+def _noqa_count() -> int:
+    """Count lint-suppression comments (noqa) in the package and tests.
+
+    Every suppression is a justified exception to the lint gate; ratcheted
+    down so the total may never grow without an explicit human decision.
+    """
+    pattern = re.compile(r"#\s*noqa", re.IGNORECASE)
+    return sum(
+        len(pattern.findall(path.read_text(encoding="utf-8")))
+        for folder in (SRC, REPO / "tests")
+        for path in sorted(folder.rglob("*.py"))
+    )
 
 
 def _pyright_errors() -> int:
@@ -244,6 +264,8 @@ def gate_details(key: str) -> list[str]:
         return _ruff_findings("C901")
     if key == "ruff_debt":
         return ["détail : pdm run lint"]
+    if key == "noqa_count":
+        return ["détail : grep -rn noqa check_mysql/ tests/"]
     if key == "min_file_cov":
         return _undercovered_files(GATE_MIN["min_file_cov"])
     if key == "test_cov":
@@ -354,6 +376,7 @@ def collect() -> dict[str, object]:
     metrics.update(_ast_stats())
     metrics["c901_over_10"] = _ruff_count("C901")
     metrics["ruff_debt"] = _ruff_debt()
+    metrics["noqa_count"] = _noqa_count()
     metrics["pyright_errors"] = _pyright_errors()
     metrics["vulture"] = _vulture_findings()
     metrics["refurb"] = _refurb_findings()
